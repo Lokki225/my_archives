@@ -1,0 +1,177 @@
+import 'package:my_archives/core/database/local.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:faker/faker.dart';
+
+class DatabaseSeeder {
+  final LocalDatabase localDatabase;
+  final faker = Faker();
+
+  DatabaseSeeder(this.localDatabase);
+
+  Future<void> seedArchives() async {
+    final db = await localDatabase.database;
+    // await db!.execute('''
+    //   CREATE TABLE Archive (
+    //   id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //   userId INTEGER NOT NULL,
+    //   folderId INTEGER NOT NULL,
+    //   title TEXT NOT NULL,
+    //   description TEXT NOT NULL,
+    //   cover_image TEXT NOT NULL,
+    //   resource_paths TEXT NOT NULL,
+    //   createdAt INTEGER NOT NULL,
+    //   updatedAt INTEGER NOT NULL,
+    //   FOREIGN KEY (userId) REFERENCES User (id) ON DELETE CASCADE,
+    //   FOREIGN KEY (folderId) REFERENCES Folder (id) ON DELETE SET NULL
+    //  );
+    // ''');
+
+    final List<Map<String, dynamic>> archives = List.generate(15, (index) {
+      return {
+        'title': faker.lorem.words(1).join(' '),
+        'userId': faker.randomGenerator.integer(10),
+        'folderId': faker.randomGenerator.integer(10),
+        'description': faker.lorem.sentences(2).join(' '),
+        'cover_image': faker.image.loremPicsum(
+          width: 500,
+          height: 500,
+        ),
+        'resource_paths': faker.lorem.words(5).map((word) => 'path/to/$word').toList().toString(),
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      };
+    });
+
+    for (var archive in archives) {
+      await db!.rawInsert(
+          '''
+        INSERT INTO Archive(title, userId, folderId, description, cover_image, resource_paths, createdAt, updatedAt)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+        ''',
+          [
+            archive['title'],
+            archive['userId'],
+            archive['folderId'],
+            archive['description'],
+            archive['cover_image'],
+            archive['resource_paths'],
+            archive['createdAt'],
+            archive['updatedAt'],
+          ]
+      );
+    }
+
+    print('15 archives seeded successfully!');
+  }
+
+  Future<void> seedFolders() async {
+    final db = await localDatabase.database;
+
+    // Uncomment and modify the CREATE TABLE statement if necessary
+//     await db!.execute('''
+//       CREATE TABLE Folder (
+//       id INTEGER PRIMARY KEY AUTOINCREMENT,
+//       userId INTEGER NOT NULL,
+//       title TEXT NOT NULL,
+//       color TEXT NOT NULL,
+//       createdAt INTEGER NOT NULL,
+//       updatedAt INTEGER NOT NULL,
+//       FOREIGN KEY (userId) REFERENCES User (id) ON DELETE CASCADE
+// );
+//     ''');
+
+    final List<Map<String, dynamic>> folders = List.generate(5, (index) {
+      return {
+        'title': faker.lorem.word(),
+        'userId': faker.randomGenerator.integer(10),
+        'color': faker.color.color(),
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      };
+    });
+
+    for (var folder in folders) {
+      await db!.rawInsert(
+        '''
+      INSERT INTO Folder(title, userId, color, createdAt, updatedAt)
+      VALUES(?, ?, ?, ?, ?)
+      ''',
+        [
+          folder['title'],
+          folder['userId'],
+          folder['color'],
+          folder['createdAt'],
+          folder['updatedAt'],
+        ],
+      );
+    }
+
+    print('5 folders seeded successfully!');
+  }
+
+  Future<void> seedCategories() async {
+    final db = await localDatabase.database;
+
+    // Uncomment and modify the CREATE TABLE statement if necessary
+    await db!.execute('''
+    CREATE TABLE Category (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      createdAt INTEGER NOT NULL,
+      updatedAt INTEGER NOT NULL,
+      FOREIGN KEY (userId) REFERENCES User (id) ON DELETE CASCADE
+    );
+    ''');
+
+    final List<Map<String, dynamic>> categories = List.generate(5, (index) {
+      return {
+        'title': faker.lorem.word(),
+        'userId': faker.randomGenerator.integer(10, min: 1), // Assuming user IDs are 1 to 10
+        'icon': faker.image.loremPicsum(width: 50, height: 50),
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
+        'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      };
+    });
+
+    for (var category in categories) {
+      await db!.rawInsert(
+        '''
+      INSERT INTO Category(title, userId, icon, createdAt, updatedAt)
+      VALUES(?, ?, ?, ?, ?)
+      ''',
+        [
+          category['title'],
+          category['userId'],
+          category['icon'],
+          category['createdAt'],
+          category['updatedAt'],
+        ],
+      );
+    }
+
+    print('5 categories seeded successfully!');
+  }
+
+  Future<void> seedPinCode(int userId) async {
+    final db = await localDatabase.database;
+
+    // await db!.execute('''
+    //   CREATE TABLE PinCode (
+    //   userId INTEGER NOT NULL,
+    //   pin_code TEXT NOT NULL,
+    //   FOREIGN KEY (userId) REFERENCES User (id) ON DELETE CASCADE
+    //   );
+    // ''');
+
+    final pinCode = "2001";
+
+    try{
+      await localDatabase.setUserPinCode(3, pinCode);
+      print('Pin code seeded successfully!');
+    }catch(e){
+      print('Error seeding pin code: $e');
+    }
+  }
+}
