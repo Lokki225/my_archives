@@ -174,4 +174,40 @@ class DatabaseSeeder {
       print('Error seeding pin code: $e');
     }
   }
+
+  Future<void> seedFolderCategory() async {
+    final db = await localDatabase.database;
+
+    // await db!.execute('''
+    //   CREATE TABLE Folder_Category (
+    //     folderId INTEGER NOT NULL,
+    //     categoryId INTEGER NOT NULL,
+    //     PRIMARY KEY (folderId, categoryId),
+    //     FOREIGN KEY (folderId) REFERENCES Folder (id) ON DELETE CASCADE,
+    //     FOREIGN KEY (categoryId) REFERENCES Category (id) ON DELETE CASCADE
+    // );
+    // ''');
+
+    final List<Map<String, dynamic>> folderCategories = List.generate(5, (index) {
+      return {
+        'folderId': faker.randomGenerator.integer(5, min: 1),
+        'categoryId': faker.randomGenerator.integer(10, min: 1), // Assuming Category IDs are 1 to 10
+      };
+    });
+
+    for (var category in folderCategories) {
+      await db!.rawInsert(
+        '''
+      INSERT INTO Folder_Category(folderId, categoryId)
+      VALUES(?, ?)
+      ''',
+        [
+          category['folderId'],
+          category['categoryId'],
+        ],
+      );
+    }
+
+    print('5 folderCategories seeded successfully!');
+  }
 }

@@ -7,7 +7,7 @@ import '../../domain/entities/category_entity.dart';
 
 abstract class CategoryLocalDataSource {
   Future<List<CategoryModel>> getCategories();
-  Future<List<CategoryModel>?> getCategoriesByQuery(String query);
+  Future<List<CategoryModel>> getCategoriesByQuery(String query);
   Future<CategoryModel> getCategory(int id);
   Future<void> addCategory(Category category);
   Future<void> updateCategory(int categoryId, String title, String icon);
@@ -47,24 +47,17 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource{
   Future<List<CategoryModel>> getCategories() async{
     try{
       final categories = await localDb.getCategories();
-
-      if(categories!.isNotEmpty){
-        return categories;
-      }
-      return [];
+      return categories;
     }catch(_){
       throw CacheException();
     }
   }
 
   @override
-  Future<List<CategoryModel>?> getCategoriesByQuery(String query) async{
+  Future<List<CategoryModel>> getCategoriesByQuery(String query) async{
     try {
       final categories = await localDb.getCategoriesByQuery(query);
-      if (categories!.isNotEmpty) {
-        return categories;
-      }
-      return null; // Explicitly return null if no data is cached.
+      return categories;
     } catch (_) {
       throw CacheException();
     }

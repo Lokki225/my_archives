@@ -9,6 +9,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../features/home/data/models/archive_model.dart';
 import '../../features/home/data/models/category_model.dart';
+import '../../features/home/domain/entities/category_entity.dart';
 import '../constants/constants.dart';
 
 
@@ -109,6 +110,29 @@ class LocalDatabase
         return null;
     }
 
+    Future<void> addUserProfilePicture(String path, int userId) async
+    {
+        final db = await database;
+
+        try
+        {
+            await db!.update(
+                'User',
+                {
+                    'profilePicture': path,
+                    'updatedAt': DateTime.now().millisecondsSinceEpoch,
+                },
+                where: 'id = ?',
+                whereArgs: [userId],
+            );
+            print('User profile picture updated successfully: $userId');
+        }
+        catch(e)
+        {
+            print('Failed to update user profile picture: $e');
+        }
+    }
+
     Future<UserModel?> getUserByEmailOrId(String? email, int? id) async
     {
         final db = await database;
@@ -188,6 +212,34 @@ class LocalDatabase
         return maps.isNotEmpty ? maps.map((map) => UserModel.fromJSON(map)).toList() : null;
     }
 
+    Future<void> updateUser(UserModel user) async
+    {
+        final db = await database;
+
+        try
+        {
+            await db!.update(
+                'User',
+                {
+                    'firstName': user.firstName,
+                    'lastName': user.lastName,
+                    'email': user.email,
+                    'password': user.password,
+                    'username': user.username,
+                    'profilePicture': user.profilePicture,
+                    'updatedAt': DateTime.now().millisecondsSinceEpoch,
+                },
+                where: 'id = ?',
+                whereArgs: [user.id],
+            );
+            print('User updated successfully: ${user.id}');
+        }
+        catch(e)
+        {
+            print('Failed to update user: $e');
+        }
+    }
+
     Future<String?> getUserPinCode(int id) async {
         final db = await database;
 
@@ -216,7 +268,6 @@ class LocalDatabase
         }
     }
 
-
     Future<void> setUserPinCode(int id, String pinCode) async{
         final db = await database;
 
@@ -233,6 +284,7 @@ class LocalDatabase
             print('Failed to update pin code: $e');
         }
     }
+
 
     // Operations on Archive Table
     Future<int?> insertArchive(ArchiveModel archive) async
@@ -269,7 +321,7 @@ class LocalDatabase
         return null;
     }
 
-    Future<List<ArchiveModel>?> getArchives(SortingOption sort) async
+    Future<List<ArchiveModel>> getArchives(SortingOption sort) async
     {
         try
         {
@@ -292,7 +344,7 @@ class LocalDatabase
                 ],
             );
 
-            return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : null;
+            return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : [];
         }
         catch (e)
         {
@@ -301,10 +353,10 @@ class LocalDatabase
             print("##############################################################");
         }
 
-        return null;
+        return [];
     }
 
-    Future<List<ArchiveModel>?> getArchivesByQuery(String query) async
+    Future<List<ArchiveModel>> getArchivesByQuery(String query) async
     {
         final db = await database;
 
@@ -315,7 +367,7 @@ class LocalDatabase
                 where: 'title LIKE ? OR description LIKE ?',
                 whereArgs: ['%$query%', '%$query%'],
             );
-            return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : null;
+            return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : [];
         }
         catch(_)
         {
@@ -323,7 +375,7 @@ class LocalDatabase
             print("An error occurred while getting archives with query: $query !");
             print("##############################################################");
         }
-        return null;
+        return [];
     }
 
     Future<ArchiveModel?> getArchive(int id) async
@@ -419,6 +471,7 @@ class LocalDatabase
         }
     }
 
+
     // Operations on Folder Table
     Future<int?> insertFolder(FolderModel folder) async
     {
@@ -451,14 +504,14 @@ class LocalDatabase
         return null;
     }
 
-    Future<List<FolderModel>?> getFolders() async
+    Future<List<FolderModel>> getFolders() async
     {
         final db = await database;
         final List<Map<String, dynamic>> maps = await db!.query('Folder', columns: ['id', 'title', 'color', 'userId', 'createdAt', 'updatedAt'], orderBy: 'createdAt DESC');
-        return maps.isNotEmpty ? maps.map((map) => FolderModel.fromJSON(map)).toList() : null;
+        return maps.isNotEmpty ? maps.map((map) => FolderModel.fromJSON(map)).toList() : [];
     }
 
-    Future<List<FolderModel>?> getFoldersByQuery(String query) async
+    Future<List<FolderModel>> getFoldersByQuery(String query) async
     {
         final db = await database;
 
@@ -469,7 +522,7 @@ class LocalDatabase
                 where: 'title LIKE ?',
                 whereArgs: ['%$query%'],
             );
-            return maps.isNotEmpty ? maps.map((map) => FolderModel.fromJSON(map)).toList() : null;
+            return maps.isNotEmpty ? maps.map((map) => FolderModel.fromJSON(map)).toList() : [];
         }
         catch(_)
         {
@@ -477,10 +530,10 @@ class LocalDatabase
             print("An error occurred while getting folders with query: $query !");
             print("##############################################################");
         }
-        return null;
+        return [];
     }
 
-    Future<List<ArchiveModel>?> getRelatedFolders(int folderId) async
+    Future<List<ArchiveModel>> getFolderRelatedArchives(int folderId) async
     {
         final db = await database;
 
@@ -502,15 +555,32 @@ class LocalDatabase
                     'updatedAt'
                 ],
             );
-            return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : null;
+            return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : [];
         }
         catch(_){
             print("##############################################################");
             print("An error occurred while getting related folders for folder with id: $folderId !");
             print("##############################################################");
         }
-        return null;
+        return [];
     }
+
+    Future<List<CategoryModel>> getFolderCategories(int folderId) async {
+        final db = await database;
+
+        final maps = await db!.rawQuery(
+            '''
+              SELECT Category.*
+              FROM Category
+              INNER JOIN Folder_Category ON Category.id = Folder_Category.categoryId
+              WHERE Folder_Category.folderId = ?
+            ''',
+            [folderId],
+        );
+
+        return maps.map((map) => CategoryModel.fromJSON(map)).toList();
+    }
+
 
     Future<FolderModel?> getFolder(int id) async
     {
@@ -647,15 +717,15 @@ class LocalDatabase
         return null;
     }
 
-    Future<List<CategoryModel>?> getCategories() async
+    Future<List<CategoryModel>> getCategories() async
     {
         final db = await database;
         final List<Map<String, dynamic>> maps = await db!.query('Category', orderBy: 'createdAt DESC');
 
-        return maps.isNotEmpty ? maps.map((map) => CategoryModel.fromJSON(map)).toList() : null;
+        return maps.isNotEmpty ? maps.map((map) => CategoryModel.fromJSON(map)).toList() : [];
     }
 
-    Future<List<CategoryModel>?> getCategoriesByQuery(String query) async
+    Future<List<CategoryModel>> getCategoriesByQuery(String query) async
     {
         final db = await database;
         try
@@ -666,7 +736,7 @@ class LocalDatabase
                 whereArgs: ['%$query%'],
             );
 
-            return maps.isNotEmpty ? maps.map((map) => CategoryModel.fromJSON(map)).toList() : null;
+            return maps.isNotEmpty ? maps.map((map) => CategoryModel.fromJSON(map)).toList() : [];
         }
         catch(_)
         {
@@ -674,7 +744,7 @@ class LocalDatabase
             print("An error occurred while getting categories with query: $query !");
             print("##############################################################");
         }
-        return null;
+        return [];
     }
 
     Future<void> updateCategory(int categoryId, String title, String icon) async

@@ -85,7 +85,7 @@ class _MyAppState extends State<MyApp> {
           } else {
             // Navigate based on the user's connection status
             final isUserConnected = snapshot.data ?? false;
-            return isUserConnected == true ? const VerifyPinCodeScreen() : const RegisterScreen();
+            return isUserConnected == true ? const HomeScreen() : const RegisterScreen();
           }
         },
       ),

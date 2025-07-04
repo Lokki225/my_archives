@@ -4,7 +4,9 @@ import 'package:my_archives/cubits/app_cubit.dart';
 import 'package:my_archives/features/folders/domain/usecases/AddNewFolder.dart';
 import 'package:my_archives/features/folders/domain/usecases/DeleFolderById.dart';
 import 'package:my_archives/features/folders/domain/usecases/GetFolderById.dart';
+import 'package:my_archives/features/folders/domain/usecases/GetFolderRelatedCategories.dart';
 import 'package:my_archives/features/folders/domain/usecases/GetRelatedArchives.dart';
+import 'package:my_archives/features/home/domain/entities/category_entity.dart';
 import 'package:my_archives/features/home/domain/entities/folder_entity.dart';
 import 'package:my_archives/features/home/domain/usecases/GetFoldersByQuery.dart';
 import 'package:my_archives/features/home/domain/usecases/GetUserByFirstName.dart';
@@ -24,6 +26,7 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
   final EditFolder editFolder;
   final DeleteFolderById deleteFolderById;
   final GetRelatedArchives getRelatedArchives;
+  final GetFolderRelatedCategories getFolderRelatedCategories;
 
   final GetUserByFirstName getUserByFirstName;
 
@@ -35,6 +38,7 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
     required this.deleteFolderById,
     required this.getRelatedArchives,
     required this.getUserByFirstName,
+    required this.getFolderRelatedCategories,
 }) : super(FolderInitial()) {
     on<FetchFoldersEvent>(_fetchFolderEvent);
     on<FetchFoldersByQueryEvent>(_fetchFoldersByQueryEvent);
@@ -42,7 +46,7 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
     on<AddNewFolderEvent>(_addNewFolderEvent);
     on<EditFolderEvent>(_editFolderEventHandler);
     on<DeleteFolderEvent>(_deleteFolderEventHandler);
-    on<FetchFolderRelatedArchivesEvent>(_getFolderRelatedArchivesHandler);
+    on<FetchFolderRelatedArchivesAndCategoriesEvent>(_getFolderRelatedArchivesAndCategoriesEventHandler);
   }
 
   void _fetchFolderEvent(FolderEvent event, Emitter<FolderState> emit) async{
@@ -147,17 +151,36 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
     }
   }
 
-  void _getFolderRelatedArchivesHandler(FetchFolderRelatedArchivesEvent event, Emitter<FolderState> emit) async{
+  void _getFolderRelatedArchivesAndCategoriesEventHandler(
+      FetchFolderRelatedArchivesAndCategoriesEvent event,
+      Emitter<FolderState> emit,
+      ) async {
     emit(FolderLoading());
-    final result = await getRelatedArchives.call(event.folderId);
 
-    try{
-      result.fold(
-        (failure) => emit(FolderError("An error occurred while fetching related archives for Folder: ${event.folderId}")),
-        (archives) => emit(FolderRelatedArchivesLoaded(archives)),
-      );
-    }catch(e){
-      emit(FolderError("Error fetching related archives for Folder: $e"));
+    try {
+      final categoryResult = await getFolderRelatedCategories.call(event.folderId);
+
+      if (categoryResult.isLeft()) {
+        emit(FolderError("An error occurred while fetching related categories for Folder: ${event.folderId}"));
+        return;
+      }
+
+      final categories = categoryResult.getOrElse(() => []);
+
+      final archiveResult = await getRelatedArchives.call(event.folderId);
+
+      if (archiveResult.isLeft()) {
+        emit(FolderError("An error occurred while fetching related archives for Folder: ${event.folderId}"));
+        return;
+      }
+
+      final archives = archiveResult.getOrElse(() => []);
+
+      emit(FolderDetailsLoaded(archives: archives, categories: categories));
+    } catch (e) {
+      emit(FolderError("Unexpected error: $e"));
     }
   }
+
+
 }

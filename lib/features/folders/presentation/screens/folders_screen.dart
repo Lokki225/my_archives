@@ -4,9 +4,12 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:my_archives/core/Common/widgets/Order_by_widget.dart';
 import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/home/presentation/bloc/folder_bloc.dart';
+import 'package:my_archives/injection_container.dart';
 
 import '../../../../bdd_test_manip.dart';
+import '../../../../core/Common/widgets/app_drawer_widget.dart';
 import '../../../../core/database/local.dart';
+import '../../../../core/database/seeds/local_database_seeder.dart';
 import '../../../../core/util/formatTimestampToDate.dart';
 import '../../../../cubits/edit_mode_cubit.dart';
 import '../../../authentification/presentation/bloc/auth_bloc.dart';
@@ -28,6 +31,8 @@ class _FoldersScreenState extends State<FoldersScreen> {
     context.read<FolderBloc>().add(FetchFoldersEvent());
     context.read<EditModeCubit>().exitEditMode();
 
+    final seeder = DatabaseSeeder(sL<LocalDatabase>());
+    // seeder.seedFolderCategory();
     // final localDBUserTest = LocalDBUserTest(localDB: LocalDatabase());
     //
     // localDBUserTest.run();
@@ -59,92 +64,7 @@ class _FoldersScreenState extends State<FoldersScreen> {
           )
         ],
       ),
-      drawer: Drawer(
-        backgroundColor: Colors.deepPurple,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.deepPurple,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                spacing: 10,
-                children: [
-                  Icon(Icons.menu_open, size: 50, color: Colors.white),
-                  const Text(
-                    'MyArchives',
-                    style: TextStyle(color: Colors.white, fontSize: 35),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home, color: Colors.white),
-              title: const Text('Home', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Navigate to Home or close the drawer
-                Navigator.pushReplacementNamed(context, '/HomeScreen');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person, color: Colors.white),
-              title: const Text('Profile', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Navigate to Folders or perform some action
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.archive_rounded, color: Colors.white),
-              title: const Text('Archives', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Navigate to Folders or perform some action
-                Navigator.pushReplacementNamed(context, '/ArchivesScreen');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.folder, color: Colors.white),
-              title: const Text('Folders', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Navigate to Folders or perform some action
-                Navigator.pushReplacementNamed(context, '/FoldersScreen');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.category, color: Colors.white),
-              title: const Text('Categories', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Navigate to Folders or perform some action
-                Navigator.pushReplacementNamed(context, '/CategoriesScreen');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.white),
-              title: const Text('Settings', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Navigate to Settings or perform some action
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.white),
-              title: const Text('Logout', style: TextStyle(fontSize: 18, color: Colors.white)),
-              onTap: ()
-              {
-                // Perform logout operation
-                context.read<AuthBloc>().add(LogoutClient());
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: AppDrawerWidget(),
       body: SingleChildScrollView(
         child: Container(
           padding: EdgeInsets.all(15),

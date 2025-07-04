@@ -14,86 +14,33 @@ class LocalDBUserTest  {
   );
 
   void run() async{
-    // Create a fake user
-    final user = User(
-      id: 1,
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'william.henry.harrison@example-pet-store.com',
-      password: 'password123',
-      username: '',
-      profilePicture: '',
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
-    );
+    final archives = await localDB.getFolderCategories(1);
+    for (final archive in archives) {
+      print(archive.toString());
+    }
+  }
 
-    // Add the user to the local database test
-    // await addTestUser(user);
-
-    // Retrieve all users from the local database test
-    // final users = await getAllUsers();
-    // if (users != null) {
-    //   for (final user in users) {
-    //     printRetrievedUser(user);
-    //   }
-    // }
-
-    // Retrieve a specific user by email from the local database test
-    // final teddyMail = 'teddydapia15@gmail.com';
-    // final retrievedUser = await getUserByEmailOrId(teddyMail, null);
-    // if (retrievedUser != null) {
-    //   printRetrievedUser(retrievedUser);
-    // }
-
-    // final archives = await localDB.getArchives();
-    // if (archives != null) {
-    //   for (final archive in archives) {
-    //     print(archive.toString());
-    //   }
-    // }
-
-    // final folders = await localDB.getFolders();
-    // if (folders != null) {
-    //   for (final folder in folders) {
-    //     print(folder.toString());
-    //   }
-
-    // Edit Archive id: 5
-    final archive = Archive(
-      id: 5,
-      title: 'New Title',
-      description: 'New Description',
-      coverImage: 'New Cover Image',
-      resourcePaths: ['New Resource Path 1', 'New Resource Path 2'],
-      userId: 1,
-      folderId: 1,
-      createdAt: DateTime.now().millisecondsSinceEpoch,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    //
-    // print("##############################################################");
-    // await localDB.deleteAllArchives();
-    // print("##############################################################");
-
-    // final archives = await localDB.getArchives();
-    // if (archives != null) {
-    //   print('Archives: ${archives.toString()}');
-    // }
-
-    // final categories = await localDB.getCategoriesByQuery("na");
-    // if (categories != null) {
-    //   for (final category in categories) {
-    //     print("Category: $category");
-    //   }
-    // }
-
+  Future<void> addUserProfilePicture(String path) async {
+    try{
+      final user = UserModel(
+          id: 3,
+          firstName: 'Franklin',
+          lastName: 'Lokki',
+          email: 'franklinlokki@gmail.com',
+          password: 'lokki2001',
+          username: '',
+          profilePicture: path,
+          createdAt: DateTime.now().millisecondsSinceEpoch,
+          updatedAt: DateTime.now().millisecondsSinceEpoch
+      );
+      // Update the user's profile picture
+      await localDB.updateUser(user);
+      print('Profile picture updated successfully.');
+    }catch(_){
+      throw CacheException();
+    }
 
   }
-  void printRetrievedUser(UserModel retrievedUser) {
-      print("##################### TEST LOCAL DB ##########################");
-      print('Retrieved User: ${retrievedUser.toString()}');
-      print("##############################################################");
-}
 
   Future<void> addTestUser(User user) async {
     // Converting User to his Model
@@ -128,8 +75,6 @@ class LocalDBUserTest  {
         throw AddingIntoLocalDBException(message);
       }
 
-      // Printing the retrieved user
-      printRetrievedUser(retrievedUser);
 
     }catch (_) {
       print("##############################################################");

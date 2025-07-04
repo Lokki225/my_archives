@@ -5,6 +5,7 @@ import 'package:my_archives/features/authentification/domain/entities/user_entit
 
 abstract class UserRepository {
   Future<Either<Failure, User>> getUser();
+  Future<Either<Failure, void>> addUserProfilePicture(String path, int userId);
   Future<Either<Failure, User>> getUserByFirstName(String username);
   Future<Either<Failure, User>> getUserByEmailOrId(String? email, int? id);
   Future<Either<Failure, UserModel>> addUser(User user);

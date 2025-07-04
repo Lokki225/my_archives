@@ -37,12 +37,8 @@ class CategoryRepositoryImpl implements CategoryRepository{
   Future<Either<Failure, List<Category>>> getCategories() async{
     try{
       final categoryModels = await localDataSource.getCategories();
-      if(categoryModels.isNotEmpty){
-        final List<Category> categories = categoryModels.map((model) => model.toEntity()).toList();
-        return Right(categories); // Return the cached user.
-      }else{
-        return Left(CacheFailure()); // No user cached.
-      }
+      final List<Category> categories = categoryModels.map((model) => model.toEntity()).toList();
+      return Right(categories);
     }catch(e){
       return Left(CacheFailure()); // Handle any exceptions.
     }
@@ -52,12 +48,8 @@ class CategoryRepositoryImpl implements CategoryRepository{
   Future<Either<Failure, List<Category>>> getCategoriesByQuery(String query) async{
     try {
       final categoryModels = await localDataSource.getCategoriesByQuery(query);
-      if (categoryModels!.isNotEmpty) {
-        final List<Category> categories = categoryModels.map((model) => model.toEntity()).toList();
-        return Right(categories); // Return the cached user.
-      } else {
-        return Left(CacheFailure()); // No user cached.
-      }
+      final List<Category> categories = categoryModels.map((model) => model.toEntity()).toList();
+      return Right(categories);
     } catch (e) {
       return Left(CacheFailure()); // Handle any exceptions.
     }

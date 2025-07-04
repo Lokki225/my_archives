@@ -5,10 +5,10 @@ sealed class FolderEvent {}
 
 class FetchFoldersEvent extends FolderEvent {}
 
-class FetchFolderRelatedArchivesEvent extends FolderEvent {
+class FetchFolderRelatedArchivesAndCategoriesEvent extends FolderEvent {
   final int folderId;
 
-  FetchFolderRelatedArchivesEvent(this.folderId);
+  FetchFolderRelatedArchivesAndCategoriesEvent(this.folderId);
 }
 
 class FetchFoldersByQueryEvent extends FolderEvent {

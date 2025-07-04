@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import 'package:my_archives/features/home/data/models/folder_model.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/archive_entity.dart';
+import '../../domain/entities/category_entity.dart';
 import '../../domain/entities/folder_entity.dart';
 import '../../domain/repositories/folder_repository.dart';
 import '../datasources/folder_local_datasource.dart';
@@ -51,11 +52,7 @@ class FolderRepositoryImpl implements FolderRepository{
   Future<Either<Failure, List<Folder>>> getFolders() async{
     try {
       final folders = await localDataSource.getFolders();
-      if (folders!.isNotEmpty) {
-        return Right(folders); // Return the cached user.
-      } else {
-        return Left(CacheFailure()); // No user cached.
-      }
+      return Right(folders);
     } catch (e) {
       return Left(CacheFailure()); // Handle any exceptions.
     }
@@ -75,25 +72,27 @@ class FolderRepositoryImpl implements FolderRepository{
   Future<Either<Failure, List<Folder>>> getFoldersByQuery(String query) async{
     try {
       final folders = await localDataSource.getFoldersByQuery(query);
-      if (folders!.isNotEmpty) {
-        return Right(folders); // Return the cached user.
-      } else {
-        return Left(CacheFailure()); // No user cached.
-      }
+      return Right(folders);
     } catch (e) {
       return Left(CacheFailure()); // Handle any exceptions.
     }
   }
 
   @override
-  Future<Either<Failure, List<Archive>>> getRelatedFolders(int folderId) async{
+  Future<Either<Failure, List<Archive>>> getFolderRelatedArchives(int folderId) async{
     try{
-      final archives = await localDataSource.getRelatedFolders(folderId);
-      if(archives!.isNotEmpty){
-        return Right(archives);
-      }else {
-        return Left(CacheFailure());
-      }
+      final archives = await localDataSource.getFolderRelatedArchives(folderId);
+      return Right(archives);
+    }catch(_){
+      return Left(CacheFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Category>>> getFolderRelatedCategories(int folderId) async{
+    try{
+      final categories = await localDataSource.getFolderRelatedCategories(folderId);
+      return Right(categories.cast<Category>());
     }catch(_){
       return Left(CacheFailure());
     }

@@ -9,6 +9,8 @@ abstract class UserLocalDataSource {
   /// Throws [CacheException] on error.
   Future<UserModel?> getUserByFirstName(String? firstName);
 
+  Future<void> addUserProfilePicture(String path, int userId);
+
   Future<UserModel?> getStoredUserByEmailOrId(String? email, int? id);
 
   /// Caches a user.
@@ -75,6 +77,15 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
         return user;
       }
       return null; // Explicitly return null if no data is cached.
+    } catch (_) {
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> addUserProfilePicture(String path, int userId) async{
+    try {
+      await localDb.addUserProfilePicture(path, userId);
     } catch (_) {
       throw CacheException();
     }

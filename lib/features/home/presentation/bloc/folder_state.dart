@@ -17,10 +17,11 @@ final class FolderLoaded extends FolderState {
   FolderLoaded(this.folders);
 }
 
-final class FolderRelatedArchivesLoaded extends FolderState {
+final class FolderDetailsLoaded extends FolderState {
   final List<Archive> archives;
+  final List<Category> categories;
 
-  FolderRelatedArchivesLoaded(this.archives);
+  FolderDetailsLoaded({required this.archives, required this.categories});
 }
 
 final class FolderDeleted extends FolderState {}

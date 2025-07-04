@@ -97,15 +97,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   }
 
                   if (state is ArchiveLoaded) {
-                    return state.archives.isNotEmpty
-                      ? SearchResultWidget(
-                        query: SearchFieldInitial.queryController.text,
-                        queryFor: 'archives',
-                        archives: state.archives,
-                        folders: null,
-                        categories: null,
-                      ): Center(
-                      child: Text('No archives found', style: TextStyle(color: Colors.white)),
+                    return SearchResultWidget(
+                      query: SearchFieldInitial.queryController.text,
+                      queryFor: 'archives',
+                      archives: state.archives,
+                      folders: null,
+                      categories: null,
                     );
                   }
 
@@ -137,15 +134,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   }
 
                   if (state is FolderLoaded) {
-                    return state.folders.isNotEmpty
-                        ? SearchResultWidget(
+                    return SearchResultWidget(
                       query: SearchFieldInitial.queryController.text,
                       queryFor: 'folders',
                       archives: null,
                       folders: state.folders,
                       categories: null,
-                    ): Center(
-                      child: Text('No Folders found', style: TextStyle(color: Colors.white)),
                     );
                   }
 
@@ -177,15 +171,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   }
 
                   if (state is CategoryLoaded) {
-                    return state.categories.isNotEmpty
-                        ? SearchResultWidget(
+                    return SearchResultWidget(
                       query: SearchFieldInitial.queryController.text,
                       queryFor: 'categories',
                       archives: null,
                       folders: null,
                       categories: state.categories,
-                    ): Center(
-                      child: Text('No Categories found', style: TextStyle(color: Colors.white)),
                     );
                   }
 

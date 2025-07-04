@@ -7,6 +7,10 @@ final class UserInitial extends UserState {}
 
 final class UserLoading extends UserState {}
 
+final class UserProfilePictureLoaded extends UserState {
+  UserProfilePictureLoaded();
+}
+
 final class UserLoaded extends UserState {
   final User user;
   UserLoaded({required this.user});

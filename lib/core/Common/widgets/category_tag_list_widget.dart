@@ -1,17 +1,18 @@
 
 import 'package:flutter/material.dart';
+import 'package:my_archives/features/home/domain/entities/category_entity.dart';
 
 class CategoryTagListWidget extends StatelessWidget {
-  final List<String> tags;
+  final List<Category> categories;
 
-  const CategoryTagListWidget({super.key, required this.tags});
+  const CategoryTagListWidget({super.key, required this.categories});
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: tags.map((tag) {
+      children: categories.map((category) {
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
           decoration: BoxDecoration(
@@ -19,7 +20,7 @@ class CategoryTagListWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            tag,
+            category.title,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,

@@ -11,6 +11,6 @@ class GetRelatedArchives{
   GetRelatedArchives({required this.repo});
 
   Future<Either<Failure, List<Archive>>> call(int folderId) async{
-    return await repo.getRelatedFolders(folderId);
+    return await repo.getFolderRelatedArchives(folderId);
   }
 }

@@ -6,9 +6,9 @@ import '../../../../core/error/exceptions.dart';
 import '../models/archive_model.dart';
 
 abstract class ArchiveLocalDataSource{
-  Future<List<ArchiveModel>?> getArchives(SortingOption sortOption);
+  Future<List<ArchiveModel>> getArchives(SortingOption sortOption);
 
-  Future<List<ArchiveModel>?> getArchivesByQuery(String query);
+  Future<List<ArchiveModel>> getArchivesByQuery(String query);
   
   Future<ArchiveModel?> getArchive(int id);
   
@@ -47,13 +47,10 @@ class ArchiveLocalDataSourceImpl implements ArchiveLocalDataSource{
   }
 
   @override
-  Future<List<ArchiveModel>?> getArchives(SortingOption sortOption) async{
+  Future<List<ArchiveModel>> getArchives(SortingOption sortOption) async{
     try {
       final archives = await localDb.getArchives(sortOption);
-      if (archives!.isNotEmpty) {
-        return archives;
-      }
-      return null; // Explicitly return null if no data is cached.
+      return archives;
     } catch (_) {
       throw CacheException();
     }
@@ -78,13 +75,10 @@ class ArchiveLocalDataSourceImpl implements ArchiveLocalDataSource{
   }
 
   @override
-  Future<List<ArchiveModel>?> getArchivesByQuery(String query) async{
+  Future<List<ArchiveModel>> getArchivesByQuery(String query) async{
     try{
       final archives = await localDb.getArchivesByQuery(query);
-      if (archives!.isNotEmpty) {
-        return archives;
-      }
-      return null; // Explicitly return null if no data is cached.
+      return archives;
     }catch(_){
       throw CacheException();
     }

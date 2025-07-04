@@ -32,7 +32,8 @@ class _SearchResultWidgetState extends State<SearchResultWidget> {
   @override
   Widget build(BuildContext context) {
     if (widget.queryFor == 'archives') {
-      return ListView.builder(
+      return widget.archives!.isNotEmpty ?
+      ListView.builder(
         itemCount: widget.archives!.length,
         itemBuilder: (BuildContext context, int index) {
           final archive = widget.archives![index];
@@ -74,9 +75,9 @@ class _SearchResultWidgetState extends State<SearchResultWidget> {
             ),
           );
         },
-      );
+      ) : Center(child: Text("No archives found matching query '${widget.query}'", style: TextStyle(color: Colors.white)));
     } else if (widget.queryFor == 'folders') {
-      return ListView.builder(
+      return widget.folders!.isNotEmpty ? ListView.builder(
         itemCount: widget.folders!.length,
         itemBuilder: (BuildContext context, int index) {
           final folder = widget.folders![index];
@@ -110,9 +111,10 @@ class _SearchResultWidgetState extends State<SearchResultWidget> {
             ),
           );
         },
-      );
+      ): Center(child: Text("No folders found matching query '${widget.query}'", style: TextStyle(color: Colors.white)));
     } else if (widget.queryFor == 'categories') {
-      return ListView.builder(
+      return widget.categories!.isNotEmpty ?
+      ListView.builder(
         itemCount: widget.categories!.length,
         itemBuilder: (BuildContext context, int index) {
           final category = widget.categories![index];
@@ -145,7 +147,7 @@ class _SearchResultWidgetState extends State<SearchResultWidget> {
             ),
           );
         },
-      );
+      ) : Center(child: Text("No categories found matching query '${widget.query}'", style: TextStyle(color: Colors.white)));
     }
 
     return Center(

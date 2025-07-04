@@ -6,9 +6,11 @@ import 'package:my_archives/features/archives/domain/usecases/DeleteArchiveById.
 import 'package:my_archives/features/authentification/data/datasources/user_local_datasource.dart';
 import 'package:my_archives/features/authentification/data/repositories/user_repository_impl.dart';
 import 'package:my_archives/features/authentification/domain/repositories/user_repository.dart';
+import 'package:my_archives/features/authentification/domain/usecases/ChangeUserProfilePicture.dart';
 import 'package:my_archives/features/authentification/presentation/bloc/auth_bloc.dart';
 import 'package:my_archives/features/authentification/presentation/cubits/auth_field_cubit.dart';
 import 'package:my_archives/features/folders/domain/usecases/AddNewFolder.dart';
+import 'package:my_archives/features/folders/domain/usecases/GetFolderRelatedCategories.dart';
 import 'package:my_archives/features/home/data/datasources/category_local_datasource.dart';
 import 'package:my_archives/features/home/data/repositories/folder_repository_impl.dart';
 import 'package:my_archives/features/home/domain/repositories/folder_repository.dart';
@@ -72,6 +74,7 @@ Future<void> initializeDep () async{
   // UseCases
   sL.registerSingleton<GetUser>(GetUser(repo: sL()));
   sL.registerSingleton<AddUser>(AddUser(repo: sL()));
+  sL.registerSingleton<ChangeUserProfilePicture>(ChangeUserProfilePicture(repo: sL()));
   sL.registerSingleton<UpdatedUser>(UpdatedUser(repo: sL()));
   sL.registerSingleton<DeleteUser>(DeleteUser(repo: sL()));
   sL.registerSingleton<GetUserByFirstName>(GetUserByFirstName(repo: sL()));
@@ -89,6 +92,7 @@ Future<void> initializeDep () async{
   sL.registerSingleton<DeleteFolderById>(DeleteFolderById(repo: sL()));
   sL.registerSingleton<GetFoldersByQuery>(GetFoldersByQuery(repo: sL()));
   sL.registerSingleton<GetRelatedArchives>(GetRelatedArchives(repo: sL()));
+  sL.registerSingleton<GetFolderRelatedCategories>(GetFolderRelatedCategories(repo: sL()));
 
   sL.registerSingleton<GetCategories>(GetCategories(repo: sL()));
   sL.registerSingleton<AddNewCategory>(AddNewCategory(repo: sL()));
@@ -103,7 +107,10 @@ Future<void> initializeDep () async{
   );
 
   sL.registerFactory<UserBloc>(
-      () => UserBloc(getUserByFirstName: sL()),
+      () => UserBloc(
+          getUserByFirstName: sL(),
+          changeUserProfilePicture: sL(),
+      ),
   );
 
   sL.registerFactory<ArchiveBloc>(
@@ -127,6 +134,7 @@ Future<void> initializeDep () async{
           editFolder: sL(),
           deleteFolderById: sL(),
           getRelatedArchives: sL(),
+          getFolderRelatedCategories: sL(),
       ),
   );
 

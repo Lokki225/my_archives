@@ -50,11 +50,7 @@ class ArchiveRepositoryImpl implements ArchiveRepository{
   Future<Either<Failure, List<Archive>>> getArchives(SortingOption sortOption) async{
     try {
       final archives = await localDataSource.getArchives(sortOption);
-      if (archives!.isNotEmpty) {
-        return Right(archives.map((archive) => archive.toEntity()).toList()); // Return the cached user.
-      } else {
-        return Left(CacheFailure()); // No user cached.
-      }
+      return Right(archives.map((archive) => archive.toEntity()).toList());
     } catch (e) {
       return Left(CacheFailure()); // Handle any exceptions.
     }
@@ -74,17 +70,9 @@ class ArchiveRepositoryImpl implements ArchiveRepository{
   Future<Either<Failure, List<Archive>>> getArchivesByQuery(String query) async{
     try{
       final archivesModel = await localDataSource.getArchivesByQuery(query);
-      if (archivesModel!.isNotEmpty) {
-        // Trying to transform back to Archive Entity
-        final List<Archive> archives = archivesModel.map((archive) => archive.toEntity()).toList();
-        if (archives.isEmpty) {
-          return Left(CacheFailure()); // No user cached.
-        }
-        return Right(archives); // Return the cached user.
-      } else {
-        return Left(CacheFailure()); // No user cached.
-      }
-      }catch(_) {
+      final List<Archive> archives = archivesModel.map((archive) => archive.toEntity()).toList();
+      return Right(archives);
+    }catch(_) {
       return Left(CacheFailure()); // Handle any exceptions.
     }
   }

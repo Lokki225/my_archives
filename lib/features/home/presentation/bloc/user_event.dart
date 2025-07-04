@@ -7,3 +7,9 @@ final class FetchUser extends UserEvent {
   final String firstName;
   FetchUser(this.firstName);
 }
+
+final class ChangeUserProfilePictureEvent extends UserEvent {
+  final String path;
+  final int userId;
+  ChangeUserProfilePictureEvent({ required this.path, required this.userId});
+}

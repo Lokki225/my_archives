@@ -119,4 +119,14 @@ class UserRepositoryImpl implements UserRepository
     }
   }
 
+  @override
+  Future<Either<Failure, void>> addUserProfilePicture(String path, int userId) async{
+    try {
+      await localDataSource.addUserProfilePicture(path, userId);
+      return Right(null);
+    } catch (e) {
+      return Left(CacheFailure()); // Handle any exceptions.
+    }
+  }
+
 }

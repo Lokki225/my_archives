@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_archives/core/Common/widgets/category_tag_list_widget.dart';
+import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/home/domain/entities/folder_entity.dart';
 
+import '../../../home/domain/entities/archive_entity.dart';
+import '../../../home/domain/entities/category_entity.dart';
 import '../../../home/presentation/bloc/folder_bloc.dart';
 
 class FolderDetailScreen extends StatefulWidget {
@@ -14,20 +17,25 @@ class FolderDetailScreen extends StatefulWidget {
 
 class _FolderDetailScreenState extends State<FolderDetailScreen> {
 
+  bool _isInit = true;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-
+    if (_isInit) {
+      final folder = ModalRoute.of(context)?.settings.arguments as Folder;
+      context.read<FolderBloc>().add(FetchFolderRelatedArchivesAndCategoriesEvent(folder.id));
+      _isInit = false;
+    }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
     // Retrieve the argument passed from the previous screen
     final folder = ModalRoute.of(context)?.settings.arguments as Folder;
-
-    // Get folder related archives
-    context.read<FolderBloc>().add(FetchFolderRelatedArchivesEvent(folder.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -57,11 +65,102 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (state is FolderRelatedArchivesLoaded) {
-                final folderArchives = state.archives;
+              if (state is FolderDetailsLoaded) {
+                final List<Archive> archives = state.archives;
+                final List<Category> categories = state.categories;
 
-                return SingleChildScrollView(
-                  child: Column(
+
+                return archives.isNotEmpty
+                    ? SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 🔼 Add folder info or whatever above the list
+                          Text(
+                            'Folder [ ${folder.title} ]',
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Categories',
+                            style: const TextStyle(fontSize: 20, color: Colors.white),
+                          ),
+                          const SizedBox(height: 8),
+                          categories.isNotEmpty
+                              ? CategoryTagListWidget(categories: categories)
+                              : const Text("No related categories", style: TextStyle(color: Colors.white70)),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Text(
+                                '(${archives.length})',
+                                style: const TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Archive${archives.length == 1 ? '' : 's'} in this folder',
+                                style: const TextStyle(fontSize: 16, color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                        archives.isNotEmpty
+                            ? Column(
+                          children: archives.map<Widget>((archive) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Card(
+                              color: Colors.deepPurple.shade200,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 5,
+                              child: ListTile(
+                                leading: Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.shade400,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(10),
+                                      bottomLeft: Radius.circular(10),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.all(5),
+                                  child: Image.asset('lib/assets/images/archive_cover.png'),
+                                ),
+                                subtitle: Text(
+                                  archive.description,
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                                title: Text(
+                                  archive.title,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 22,
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/ArchiveDetailScreen',
+                                    arguments: archive,
+                                  );
+                                },
+                              ),
+                            ),
+                          )).toList(),
+                        )
+                            : const Text("No archives in this folder", style: TextStyle(color: Colors.white)),
+                        const SizedBox(height: 20),
+                        ],
+                      ),
+                    )
+                  :Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 🔼 Add folder info or whatever above the list
@@ -75,73 +174,44 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                         style: const TextStyle(fontSize: 20, color: Colors.white),
                       ),
                       const SizedBox(height: 8),
-                      CategoryTagListWidget(tags: ["ID", "PDFs", "Photos"]),
+                      categories.isNotEmpty
+                          ? CategoryTagListWidget(categories: categories)
+                          : const Text("No related categories", style: TextStyle(color: Colors.white)),
                       const SizedBox(height: 20),
                       Row(
-                        spacing: 10,
                         children: [
                           Text(
-                            '(${folderArchives.length})',
+                            '(${archives.length})',
                             style: const TextStyle(fontSize: 22, color: Colors.white70, fontWeight: FontWeight.bold),
                           ),
+                          const SizedBox(width: 10),
                           Text(
-                            'Archive${folderArchives.length == 1 ? '' : 's'} in this folder',
+                            'Archive${archives.length == 1 ? '' : 's'} in this folder',
                             style: const TextStyle(fontSize: 16, color: Colors.white70),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-
-                      // 🔁 Archives list manually
-                      ...folderArchives.map((archive) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Card(
-                          color: Colors.deepPurple.shade200,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 5,
-                          child: ListTile(
-                            leading: Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                color: Colors.teal.shade400,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  bottomLeft: Radius.circular(10),
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(5),
-                              child: Image.asset('lib/assets/images/archive_cover.png'),
-                            ),
-                            subtitle: Text(
-                              archive.description,
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                            title: Text(
-                              archive.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 22,
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.pushNamed(
-                                context,
-                                '/ArchiveDetailScreen',
-                                arguments: archive,
-                              );
-                            },
-                          ),
-                        ),
-                      )),
-
                       const SizedBox(height: 20),
                     ],
                   ),
-                );
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 180),
+                    child: Column(
+                      children: [
+                        Image.asset('$defaultImagePath/no_archives.png'),
+                        const SizedBox(height: 10),
+                        Text(
+                          'You have no Archives in this folder yet',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
               }
 
               return const SizedBox(); // Empty fallback
