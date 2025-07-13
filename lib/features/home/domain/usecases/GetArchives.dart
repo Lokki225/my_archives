@@ -11,7 +11,7 @@ class GetArchives{
 
   GetArchives({required this.repo});
 
-  Future<Either<Failure, List<Archive>>> call(SortingOption sortOption) async {
-    return await repo.getArchives(sortOption);
+  Future<Either<Failure, List<Archive>>> call(SortingOption sortOption, int userId) async {
+    return await repo.getArchives(sortOption, userId);
   }
 }

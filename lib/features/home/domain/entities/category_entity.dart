@@ -1,5 +1,6 @@
 
 import 'package:equatable/equatable.dart';
+import 'package:my_archives/features/home/data/models/category_model.dart';
 
 class Category extends Equatable{
   final int id;
@@ -20,5 +21,10 @@ class Category extends Equatable{
 
   @override
   List<Object?> get props => [id, title, icon, userId, createdAt, updatedAt];
+
+
+  CategoryModel toModel(){
+    return CategoryModel(id: id, title: title, icon: icon, userId: userId, createdAt: createdAt, updatedAt: updatedAt);
+  }
 
 }

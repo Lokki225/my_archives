@@ -7,7 +7,7 @@ import '../entities/archive_entity.dart';
 
 abstract class ArchiveRepository{
   Future<Either<Failure, Archive>> getArchive(int id);
-  Future<Either<Failure, List<Archive>>> getArchives(SortingOption sortOption);
+  Future<Either<Failure, List<Archive>>> getArchives(SortingOption sortOption, int userId);
   Future<Either<Failure, List<Archive>>> getArchivesByQuery(String query);
   Future<Either<Failure, void>> addArchive(Archive archive);
   Future<Either<Failure, void>> updateArchive(Archive archive);

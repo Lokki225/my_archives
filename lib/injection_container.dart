@@ -10,6 +10,7 @@ import 'package:my_archives/features/authentification/domain/usecases/ChangeUser
 import 'package:my_archives/features/authentification/presentation/bloc/auth_bloc.dart';
 import 'package:my_archives/features/authentification/presentation/cubits/auth_field_cubit.dart';
 import 'package:my_archives/features/folders/domain/usecases/AddNewFolder.dart';
+import 'package:my_archives/features/folders/domain/usecases/AddRelatedCategories.dart';
 import 'package:my_archives/features/folders/domain/usecases/GetFolderRelatedCategories.dart';
 import 'package:my_archives/features/home/data/datasources/category_local_datasource.dart';
 import 'package:my_archives/features/home/data/repositories/folder_repository_impl.dart';
@@ -24,10 +25,16 @@ import 'cubits/app_cubit.dart';
 import 'cubits/edit_mode_cubit.dart';
 import 'features/archives/domain/usecases/EditArchiveById.dart';
 import 'features/archives/domain/usecases/GetArchiveById.dart';
+import 'features/change_tracker/table_change_tracker_local_datasource.dart';
+import 'features/change_tracker/table_change_tracker_repository_impl.dart';
+import 'features/change_tracker/table_change_tracker_repository.dart';
 import 'features/authentification/domain/usecases/AddUser.dart';
 import 'features/authentification/domain/usecases/DeleteUser.dart';
+import 'features/change_tracker/GetTableChangeTracker.dart';
 import 'features/authentification/domain/usecases/GetUser.dart';
+import 'features/change_tracker/InsertInTableChangeTracker.dart';
 import 'features/authentification/domain/usecases/UpdateUser.dart';
+import 'features/authentification/presentation/bloc/table_change_tracker_bloc.dart';
 import 'features/categories/domain/usecases/AddNewCategory.dart';
 import 'features/categories/domain/usecases/DeleteCategory.dart';
 import 'features/categories/domain/usecases/EditCategory.dart';
@@ -88,6 +95,7 @@ Future<void> initializeDep () async{
 
   sL.registerSingleton<GetFolders>(GetFolders(repo: sL()));
   sL.registerSingleton<AddNewFolder>(AddNewFolder(repo: sL()));
+  sL.registerSingleton<AddFolderRelatedCategories>(AddFolderRelatedCategories(repo: sL()));
   sL.registerSingleton<EditFolder>(EditFolder(repo: sL()));
   sL.registerSingleton<DeleteFolderById>(DeleteFolderById(repo: sL()));
   sL.registerSingleton<GetFoldersByQuery>(GetFoldersByQuery(repo: sL()));
@@ -100,6 +108,8 @@ Future<void> initializeDep () async{
   sL.registerSingleton<DeleteCategory>(DeleteCategory(repo: sL()));
   sL.registerSingleton<GetCategoriesByQuery>(GetCategoriesByQuery(repo: sL()));
 
+  // sL.registerSingleton<GetTableChangeTracker>(GetTableChangeTracker(repo: sL()));
+  // sL.registerSingleton<InsertInTableChangeTracker>(InsertInTableChangeTracker(repo: sL()));
 
   // Blocks
   sL.registerFactory<AuthBloc>(
@@ -130,6 +140,7 @@ Future<void> initializeDep () async{
           getFolders: sL(),
           getFoldersByQuery: sL(),
           addNewFolder: sL(),
+          addFolderRelatedCategories: sL(),
           getUserByFirstName: sL(),
           editFolder: sL(),
           deleteFolderById: sL(),
@@ -148,6 +159,13 @@ Future<void> initializeDep () async{
           deleteCategory: sL(),
       ),
   );
+
+  // sL.registerFactory<TableChangeTrackerBloc>(
+  //     () => TableChangeTrackerBloc(
+  //         getTableChangeTracker: sL(),
+  //         insertInTableChangeTracker: sL(),
+  //     ),
+  // );
 
   // Cubits
   sL.registerFactory<AppCubit>(() => AppCubit());

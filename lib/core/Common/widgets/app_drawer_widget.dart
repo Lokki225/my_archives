@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../cubits/app_cubit.dart';
 import '../../../features/authentification/presentation/bloc/auth_bloc.dart';
 
 class AppDrawerWidget extends StatefulWidget {
@@ -16,6 +17,11 @@ class _AppDrawerWidgetState extends State<AppDrawerWidget> {
     return BlocListener<AuthBloc, AuthState>(
       listener: (BuildContext context, AuthState state) {
         if (state is AuthLogout) {
+          // Remove user data from localStorage with AppCubit using context
+          context.read<AppCubit>().deleteUserData();
+
+          print('state: $state');
+          // Navigate to the login screen
           Navigator.pushReplacementNamed(context, '/LoginScreen');
         }
       },

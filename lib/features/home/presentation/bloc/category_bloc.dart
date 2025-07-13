@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/categories/domain/usecases/GetCategories.dart';
 import 'package:my_archives/features/home/domain/entities/category_entity.dart';
 import 'package:my_archives/features/home/domain/usecases/GetCategoriesByQuery.dart';
@@ -38,17 +39,37 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     on<DeleteCategoryEvent>(_deleteCategory);
   }
 
-  void _fetchCategories(FetchCategoriesEvent event, Emitter<CategoryState> emit) async{
+  void _fetchCategories(FetchCategoriesEvent event, Emitter<CategoryState> emit) async {
     emit(CategoryLoading());
 
-    try{
-      final result = await getCategories.call();
-      result.fold(
-        (failure) => emit(CategoryError("Error Loading Categories")),
-        (categories) => emit(CategoryLoaded(categories)),
+    try {
+      // Get user id by logged user first name
+      final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+      if (currentLoggedUserFirstName == null) return;
+
+      final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+      await resultUser.fold(
+            (failure) async {
+          if (!emit.isDone) emit(CategoryError("Error retrieving logged user info"));
+        },
+            (user) async {
+          final result = await getCategories.call(event.sortOption, user.id);
+
+          if (emit.isDone) return;
+
+          result.fold(
+                (failure) {
+              if (!emit.isDone) emit(CategoryError("Error Loading Categories"));
+            },
+                (categories) {
+              if (!emit.isDone) emit(CategoryLoaded(categories));
+            },
+          );
+        },
       );
-    }catch(e){
-      emit(CategoryError("Error Fetching Categories"));
+    } catch (e) {
+      if (!emit.isDone) emit(CategoryError("Error Fetching Categories"));
     }
   }
 
@@ -91,7 +112,13 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
             final result = await addNewCategory.call(newCategory);
             result.fold(
               (failure) => emit(CategoryError("Error Creating New Category")),
-              (_) => emit(CategoryCreated()),
+              (_) async{
+                // Add into TableChangeTracker
+                await sL<AppCubit>().insertTableChange("Category", newCategory.id, TableChangeStatus.created, user.id);
+
+                // Emit CategoryCreated
+                emit(CategoryCreated());
+              },
             );
           }catch(e){
             emit(CategoryError("Error Adding New Category"));
@@ -107,7 +134,20 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     try {
       result.fold(
           (failure) => emit(CategoryError("Error Editing Category")),
-          (_) => emit(CategoryEdited()),
+          (_) async{
+            // Add into TableChangeTracker
+            final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+            if(currentLoggedUserFirstName == null) return;
+            final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+            resultUser.fold(
+              (failure) => emit(CategoryError("An error occurred while fetching User: ${event.id}")),
+              (user) async{
+                await sL<AppCubit>().insertTableChange("Category", event.id, TableChangeStatus.modified, user.id);
+                emit(CategoryEdited());
+              }
+            );
+          },
       );
       } catch (e) {
       emit(CategoryError("Error Updating Category with ID: ${event.id}"));
@@ -121,7 +161,20 @@ class CategoryBloc extends Bloc<CategoryEvent, CategoryState> {
     try {
       result.fold(
             (failure) => emit(CategoryError("Error Deleting Category")),
-            (_) => emit(CategoryDeleted()),
+            (_) async{
+              // Add into TableChangeTracker
+              final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+              if(currentLoggedUserFirstName == null) return;
+              final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+              resultUser.fold(
+                (failure) => emit(CategoryError("An error occurred while fetching User: ${event.categoryId}")),
+                  (user) async{
+                  await sL<AppCubit>().insertTableChange("Category", event.categoryId, TableChangeStatus.deleted, user.id);
+                  emit(CategoryDeleted());
+                }
+              );
+            },
       );
       } catch (e) {
       emit(CategoryError("Error Deleting Category with ID: ${event.categoryId}"));

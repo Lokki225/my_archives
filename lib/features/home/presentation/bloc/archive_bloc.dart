@@ -46,11 +46,34 @@ class ArchiveBloc extends Bloc<ArchiveEvent, ArchiveState> {
   void _fetchArchives(FetchArchivesEvent event, Emitter<ArchiveState> emit) async {
     emit(ArchiveLoading());
 
-    final result = await getArchives.call(event.sortOption);
-    result.fold(
-      (failure) => emit(ArchiveError(error: "Error Loading Archives")),
-      (archives) => emit(ArchiveLoaded(archives: archives))
-    );
+    try {
+      final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+      if (currentLoggedUserFirstName == null) return;
+
+      final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+      await resultUser.fold(
+            (failure) async {
+          if (!emit.isDone) emit(ArchiveError(error: "Error retrieving logged user info"));
+        },
+            (user) async {
+          final result = await getArchives.call(event.sortOption, user.id);
+
+          if (emit.isDone) return;
+
+          result.fold(
+                (failure) {
+              if (!emit.isDone) emit(ArchiveError(error: "Error Loading Archives"));
+            },
+                (archives) {
+              if (!emit.isDone) emit(ArchiveLoaded(archives: archives));
+            },
+          );
+        },
+      );
+    } catch (e) {
+      if (!emit.isDone) emit(ArchiveError(error: "Unexpected error: $e"));
+    }
   }
 
   void _fetchArchiveById(FetchArchiveByIdEvent event, Emitter<ArchiveState> emit) async {
@@ -96,92 +119,121 @@ class ArchiveBloc extends Bloc<ArchiveEvent, ArchiveState> {
 
     try {
       final userLoggedFirstName = await sL<AppCubit>().getUserFirstName();
+      if (userLoggedFirstName == null) {
+        if (!emit.isDone) emit(ArchiveError(error: "User not found"));
+        return;
+      }
 
-      final userResult = await getUserByFirstName.call(userLoggedFirstName!);
+      final userResult = await getUserByFirstName.call(userLoggedFirstName);
+      if (userResult.isLeft()) {
+        if (!emit.isDone) emit(ArchiveError(error: "Error Loading User"));
+        return;
+      }
 
-      if (emit.isDone) return;
+      final user = userResult.getOrElse(() => throw Exception("Unexpected null user"));
 
-      await userResult.fold(
-            (failure) async {
-          if (!emit.isDone) emit(ArchiveError(error: "Error Loading User"));
-        },
-            (user) async {
-          final archive = Archive(
-            id: 0,
-            title: event.title,
-            description: event.description,
-            coverImage: event.coverImage,
-            resourcePaths: event.resourcePaths,
-            userId: user.id,
-            folderId: event.folderId ?? DEFAULT_FOLDER_ID,
-            createdAt: DateTime.now().millisecondsSinceEpoch,
-            updatedAt: DateTime.now().millisecondsSinceEpoch,
-          );
-
-          final result = await addNewArchive.call(archive);
-
-          if (emit.isDone) return;
-
-          result.fold(
-                (failure) {
-              if (!emit.isDone) emit(ArchiveError(error: "Error Creating Archive"));
-            },
-                (_) {
-              if (!emit.isDone) emit(ArchiveCreated());
-            },
-          );
-        },
+      final archive = Archive(
+        id: 0,
+        title: event.title,
+        description: event.description,
+        coverImage: event.coverImage,
+        resourcePaths: event.resourcePaths,
+        userId: user.id,
+        folderId: event.folderId ?? DEFAULT_FOLDER_ID,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
       );
+
+      final result = await addNewArchive.call(archive);
+
+      if (result.isLeft()) {
+        if (!emit.isDone) emit(ArchiveError(error: "Error Creating Archive"));
+        return;
+      }
+
+      await sL<AppCubit>().insertTableChange("Archive", archive.id, TableChangeStatus.created, user.id);
+
+      if (!emit.isDone) emit(ArchiveCreated());
     } catch (e) {
       if (!emit.isDone) emit(ArchiveError(error: "Unexpected error: $e"));
     }
   }
+
 
   void _editArchive(EditArchiveEvent event, Emitter<ArchiveState> emit) async {
     emit(ArchiveLoading());
 
     try {
       final userLoggedFirstName = await sL<AppCubit>().getUserFirstName();
+      if (userLoggedFirstName == null) {
+        if (!emit.isDone) emit(ArchiveError(error: "User not found"));
+        return;
+      }
 
-      final userResult = await getUserByFirstName.call(userLoggedFirstName!);
+      final userResult = await getUserByFirstName.call(userLoggedFirstName);
+      if (userResult.isLeft()) {
+        if (!emit.isDone) emit(ArchiveError(error: "Error Loading User"));
+        return;
+      }
 
-      await userResult.fold(
-            (failure) async {
-          emit(ArchiveError(error: "Error Loading User"));
-        },
-            (user) async {
-          final archive = Archive(
-            id: event.id,
-            title: event.title,
-            description: event.description,
-            coverImage: event.coverImage,
-            resourcePaths: event.resourcePaths,
-            userId: user.id,
-            folderId: event.folderId,
-            createdAt: DateTime.now().millisecondsSinceEpoch,
-            updatedAt: DateTime.now().millisecondsSinceEpoch,
-          );
+      final user = userResult.getOrElse(() => throw Exception("Unexpected null user"));
 
-          final result = await editArchive.call(archive);
-
-          await result.fold(
-                (failure) async => emit(ArchiveError(error: "Error Editing Archive")),
-                (_) async => emit(ArchiveEdited()),
-          );
-        },
+      final archive = Archive(
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        coverImage: event.coverImage,
+        resourcePaths: event.resourcePaths,
+        userId: user.id,
+        folderId: event.folderId,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
       );
+
+      final result = await editArchive.call(archive);
+
+      if (result.isLeft()) {
+        if (!emit.isDone) emit(ArchiveError(error: "Error Editing Archive"));
+        return;
+      }
+
+      await sL<AppCubit>().insertTableChange("Archive", event.id, TableChangeStatus.modified, user.id);
+
+      if (!emit.isDone) emit(ArchiveEdited());
     } catch (e) {
-      emit(ArchiveError(error: "Unexpected error: $e"));
+      if (!emit.isDone) emit(ArchiveError(error: "Unexpected error: $e"));
     }
   }
+
 
   void _deleteArchive(DeleteArchiveEvent event, Emitter<ArchiveState> emit) async {
     emit(ArchiveLoading());
 
     final result = await deleteArchive.call(event.id);
-    result.fold(
-      (failure) => emit(ArchiveError(error: "Error Deleting Archive")),
-      (_) => emit(ArchiveDeleted())
-    );
+
+    if (result.isLeft()) {
+      emit(ArchiveError(error: "Error Deleting Archive"));
+      return;
+    }
+
+    final userLoggedFirstName = await sL<AppCubit>().getUserFirstName();
+    if (userLoggedFirstName == null) {
+      emit(ArchiveError(error: "User not found"));
+      return;
+    }
+
+    final userResult = await getUserByFirstName.call(userLoggedFirstName);
+
+    if (userResult.isLeft()) {
+      emit(ArchiveError(error: "Error Loading User"));
+      return;
+    }
+
+    final user = userResult.getOrElse(() => throw Exception("Unexpected null user"));
+    await sL<AppCubit>().insertTableChange("Archive", event.id, TableChangeStatus.deleted, user.id);
+
+    // Final emit AFTER all awaits
+    emit(ArchiveDeleted());
   }
+
 }

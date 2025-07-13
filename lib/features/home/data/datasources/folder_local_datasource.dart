@@ -1,4 +1,5 @@
 
+import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/home/data/models/archive_model.dart';
 
 import '../../../../core/database/local.dart';
@@ -7,12 +8,13 @@ import '../models/category_model.dart';
 import '../models/folder_model.dart';
 
 abstract class FolderLocalDataSource{
-  Future<List<FolderModel>> getFolders();
+  Future<List<FolderModel>> getFolders(SortingOption sortOption, int userId);
   Future<List<FolderModel>> getFoldersByQuery(String query);
   Future<List<ArchiveModel>> getFolderRelatedArchives(int folderId);
   Future<List<CategoryModel>> getFolderRelatedCategories(int folderId);
   Future<FolderModel?> getFolder(int id);
   Future<int> addFolder(FolderModel folder);
+  Future<void> addFolderRelatedCategories(int folderId, List<CategoryModel> categories);
   Future<void> updateFolder(int folderId, String title, String color);
   Future<void> deleteFolder(int id);
 }
@@ -60,9 +62,9 @@ class FolderLocalDataSourceImpl implements FolderLocalDataSource{
   }
 
   @override
-  Future<List<FolderModel>> getFolders() async{
+  Future<List<FolderModel>> getFolders(SortingOption sortOption, int userId) async{
     try {
-      final folders = await localDb.getFolders();
+      final folders = await localDb.getFolders(sortOption, id: userId);
       return folders;
     } catch (_) {
       throw CacheException();
@@ -104,6 +106,15 @@ class FolderLocalDataSourceImpl implements FolderLocalDataSource{
       final categories = await localDb.getFolderCategories(folderId);
       return categories;
     }catch(_){
+      throw CacheException();
+    }
+  }
+
+  @override
+  Future<void> addFolderRelatedCategories(int folderId, List<CategoryModel> categories) async{
+    try {
+      await localDb.addFolderRelatedCategories(folderId, categories);
+    } catch (_) {
       throw CacheException();
     }
   }

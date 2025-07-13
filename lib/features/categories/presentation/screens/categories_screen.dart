@@ -7,7 +7,6 @@ import '../../../../core/Common/widgets/app_drawer_widget.dart';
 import '../../../../core/constants/constants.dart';
 import '../../../../core/util/formatTimestampToDate.dart';
 import '../../../../cubits/edit_mode_cubit.dart';
-import '../../../authentification/presentation/bloc/auth_bloc.dart';
 
 class CategoriesScreen extends StatefulWidget
 {
@@ -132,7 +131,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "Filters",
+                                        "Sort By",
                                         style: TextStyle(
                                           fontSize: 25,
                                           fontWeight: FontWeight.bold,
@@ -150,7 +149,23 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                                             _selectedFilter = selectedOption;
                                           }
                                           );
-
+                                          switch (selectedOption) {
+                                            case 'All':
+                                              context.read<CategoryBloc>().add(FetchCategoriesEvent());
+                                              break;
+                                            case 'Last Added':
+                                              context.read<CategoryBloc>().add(FetchCategoriesEvent(sortOption: SortingOption.lastAddedFirst));
+                                              break;
+                                            case 'Last Updated':
+                                              context.read<CategoryBloc>().add(FetchCategoriesEvent(sortOption: SortingOption.lastUpdatedFirst));
+                                              break;
+                                            case 'Title Asc':
+                                              context.read<CategoryBloc>().add(FetchCategoriesEvent(sortOption: SortingOption.titleAZ));
+                                              break;
+                                            case 'Title Desc':
+                                              context.read<CategoryBloc>().add(FetchCategoriesEvent(sortOption: SortingOption.titleZA));
+                                              break;
+                                          }
                                         },
                                       ),
                                     ],
@@ -292,6 +307,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                                                             {
                                                               // Add category to database or update state here
                                                               context.read<CategoryBloc>().add(EditCategoryEvent(category.id, formFieldsVal['title'], formFieldsVal['icon']));
+                                                              context.read<CategoryBloc>().add(FetchCategoriesEvent());
                                                               ScaffoldMessenger.of(context).showSnackBar(
                                                                 SnackBar(content: Text("Category edited successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
                                                               );
@@ -305,7 +321,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                                                         {
                                                           // Handle delete action
                                                           context.read<CategoryBloc>().add(DeleteCategoryEvent(category.id));
-
+                                                          context.read<CategoryBloc>().add(FetchCategoriesEvent());
                                                           ScaffoldMessenger.of(context).showSnackBar(
                                                             SnackBar(content: Text("Category deleted successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.red),
                                                           );
@@ -323,7 +339,11 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                             ),
                           ),
                         ) :
-                        Center(child: Text("No categorys found."));
+                        Center(child: Text("No categories found.",style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w300,
+                        )));
                       }
 
                       if (state is CategoryError)
@@ -348,7 +368,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
             {
               // Add category to database or update state here
               context.read<CategoryBloc>().add(AddNewCategoryEvent(formFieldsVal['title'], formFieldsVal['icon']));
-              context.read<CategoryBloc>().add(ResetCategoryToInitialStateEvent());
+              context.read<CategoryBloc>().add(FetchCategoriesEvent(sortOption: SortingOption.lastAddedFirst));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text("Folder created successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
               );
@@ -368,8 +388,8 @@ void showFormModal({
   Function(Map<String, dynamic> formFieldsVal)? onSave,
 })
 {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _titleController = TextEditingController(text: initialTitle ?? formFieldsVal?['title'] ?? "");
+  final formKey = GlobalKey<FormState>();
+  final TextEditingController titleController = TextEditingController(text: initialTitle ?? formFieldsVal?['title'] ?? "");
 
   showModalBottomSheet(
       context: context,
@@ -388,17 +408,17 @@ void showFormModal({
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _titleController.text.isEmpty ? 'Add New Category' : 'Edit Category',
+                  titleController.text.isEmpty ? 'Add New Category' : 'Edit Category',
                   style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 SizedBox(height: 16),
                 TextFormField(
-                  controller: _titleController,
+                  controller: titleController,
                   decoration: InputDecoration(
                     labelText: 'Category Title',
                     labelStyle: TextStyle(color: Colors.white),
@@ -417,10 +437,10 @@ void showFormModal({
                 SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
+                    if (formKey.currentState!.validate()) {
                       onSave?.call(
                         {
-                          'title': _titleController.text,
+                          'title': titleController.text,
                           'icon': '',
                         },
                       );
@@ -431,7 +451,7 @@ void showFormModal({
                     backgroundColor: Colors.deepPurple.shade200,
                   ),
                   child: Text(
-                    _titleController.text.isEmpty ? 'Add Category' : 'Save Changes',
+                    titleController.text.isEmpty ? 'Add Category' : 'Save Changes',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),

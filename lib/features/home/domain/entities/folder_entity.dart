@@ -3,11 +3,14 @@ import 'dart:ui';
 
 import 'package:equatable/equatable.dart';
 
+import 'category_entity.dart';
+
 class Folder extends Equatable{
   final int id;
   final String title;
   final String color;
   final int userId;
+  final List<Category> relatedCategories;
   final int createdAt;
   final int updatedAt;
 
@@ -16,12 +19,13 @@ class Folder extends Equatable{
     required this.title,
     required this.color,
     required this.userId,
+    required this.relatedCategories,
     required this.createdAt,
     required this.updatedAt,
   });
 
   @override
-  List<Object?> get props => [id, title, color, userId, createdAt, updatedAt];
+  List<Object?> get props => [id, title, color, userId, relatedCategories, createdAt, updatedAt];
 
   Map<String, int> getColorFromString(String colorString) {
     final regex = RegExp(
@@ -45,4 +49,5 @@ class Folder extends Equatable{
     final int colorInt = int.parse(colorString, radix: 16);
     return Color(colorInt);
   }
+
 }

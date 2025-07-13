@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:my_archives/config/routes/routes.dart';
 import 'package:my_archives/core/database/local.dart';
 import 'package:my_archives/features/authentification/presentation/bloc/auth_bloc.dart';
+import 'package:my_archives/features/authentification/presentation/bloc/table_change_tracker_bloc.dart';
 import 'package:my_archives/features/authentification/presentation/screens/register_screen.dart';
 import 'package:my_archives/features/code_pin_verification/presentation/screens/create_pin_code_screen.dart';
 import 'package:my_archives/features/code_pin_verification/presentation/screens/verify_pin_code_screen.dart';
@@ -41,6 +42,7 @@ void main() async {
         BlocProvider<ArchiveBloc>(create: (_) => sL<ArchiveBloc>()),
         BlocProvider<FolderBloc>(create: (_) => sL<FolderBloc>()),
         BlocProvider<CategoryBloc>(create: (_) => sL<CategoryBloc>()),
+        // BlocProvider<TableChangeTrackerBloc>(create: (_) => sL<TableChangeTrackerBloc>()),
       ],
       child: const MyApp(),
     ),
@@ -85,7 +87,7 @@ class _MyAppState extends State<MyApp> {
           } else {
             // Navigate based on the user's connection status
             final isUserConnected = snapshot.data ?? false;
-            return isUserConnected == true ? const HomeScreen() : const RegisterScreen();
+            return isUserConnected == true ? const VerifyPinCodeScreen() : const RegisterScreen();
           }
         },
       ),

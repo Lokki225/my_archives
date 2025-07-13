@@ -1,6 +1,8 @@
 
 import 'package:my_archives/features/home/domain/entities/folder_entity.dart';
 
+import '../../domain/entities/category_entity.dart';
+
 class FolderModel extends Folder
 {
     const FolderModel({
@@ -8,6 +10,7 @@ class FolderModel extends Folder
       required super.title,
       required super.color,
       required super.userId,
+      required super.relatedCategories,
       required super.createdAt,
       required super.updatedAt
     });
@@ -18,6 +21,7 @@ class FolderModel extends Folder
         title: json['title'] ?? '',
         color: json['color'] ?? '',
         userId: json['userId'] as int,
+        relatedCategories: json['relatedCategories'] as List<Category> ?? [],
         createdAt: json['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
         updatedAt: json['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch
       );

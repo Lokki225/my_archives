@@ -47,7 +47,7 @@ Widget _body() {
     },
     child: BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        if (state is AuthInitial || state is AuthError || state is AuthLoading) {
+        if (state is AuthInitial || state is AuthError || state is AuthLoading || state is AuthLogout) {
           return Padding(
             padding: const EdgeInsets.all(10.0),
             child: Center(
@@ -109,11 +109,7 @@ Widget _body() {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => RegisterScreen(),
-                                    ),
-                                  );
+                                  Navigator.pushReplacementNamed(context, '/RegisterScreen');
                                 },
                                 child: const Text(
                                   "Register",

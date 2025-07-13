@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../../cubits/app_cubit.dart';
 import '../../../../injection_container.dart';
@@ -32,8 +31,11 @@ class _CreatePinCodeScreenState extends State<CreatePinCodeScreen> {
     final firstName = await sL<AppCubit>().getUserFirstName();
     final id = await sL<AppCubit>().getUserIDByFirstName(firstName!);
 
+    print("Logged Id: $id");
+
     await sL<AppCubit>().setUserPINCode(id!, pin);
     Navigator.pushReplacementNamed(context, '/VerifyPinCodeScreen');
+
   }
 
   void _showError(String msg) {

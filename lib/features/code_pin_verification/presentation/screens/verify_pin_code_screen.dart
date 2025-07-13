@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-
-import '../../../../core/database/local.dart';
-import '../../../../core/database/seeds/local_database_seeder.dart';
 import '../../../../cubits/app_cubit.dart';
 import '../../../../injection_container.dart';
 
@@ -33,7 +30,7 @@ class _VerifyPinCodeScreenState extends State<VerifyPinCodeScreen> {
       Navigator.pushReplacementNamed(context, '/HomeScreen'); // Or your main screen
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Incorrect PIN')),
+        const SnackBar(content: Text('Incorrect PIN', style: TextStyle(color: Colors.white),), backgroundColor: Colors.red),
       );
       _pinController.clear();
     }

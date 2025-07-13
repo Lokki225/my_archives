@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_archives/core/Common/widgets/user_activity_table.dart';
 import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/home/presentation/bloc/user_bloc.dart';
 
@@ -45,12 +46,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.more_vert),
             onPressed: () {
-              // Navigate to SearchScreen
-              Navigator.pushNamed(context, '/SearchScreen');
+              // PopupMenu (option for edit the profile or delete it)
+
             },
-          )
+          ),
         ],
         title: const Text(
           'MyArchives',
@@ -81,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Colors.white,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Colors.teal,
+                                color: Colors.deepPurpleAccent,
                                 width: 4,
                               ),
                             ),
@@ -101,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               height: 50,
                               width: 50,
                               decoration: const BoxDecoration(
-                                color: Colors.teal,
+                                color: Colors.deepPurpleAccent,
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -128,6 +129,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 45),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Text(
+                        "My Profile",
+                        style: TextStyle(
+                          color: Colors.white,
+                          // fontWeight: FontWeight.bold
+                          fontSize: 35,
+                          letterSpacing: 5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 45),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.white,),
+                        const SizedBox(width: 15,),
+                        Text(
+                          'User Infos',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
                     Padding(
                       padding: const EdgeInsets.only(left: 35.0),
                       child: Row(
@@ -251,6 +279,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 25),
+                    Row(
+                      children: [
+                        Icon(Icons.add_chart, color: Colors.white,),
+                        const SizedBox(width: 15,),
+                        Text(
+                          'User Activities',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    UserActivityTable(userId: state.user.id),
+                    const SizedBox(height: 25),
+                    const Text(
+                      'MyArchives (c) 2025',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 25),
                   ],
                 ),
               ),

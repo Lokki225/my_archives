@@ -1,4 +1,5 @@
 
+import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/home/data/models/category_model.dart';
 
 import '../../../../core/database/local.dart';
@@ -6,7 +7,7 @@ import '../../../../core/error/exceptions.dart';
 import '../../domain/entities/category_entity.dart';
 
 abstract class CategoryLocalDataSource {
-  Future<List<CategoryModel>> getCategories();
+  Future<List<CategoryModel>> getCategories(SortingOption sort, int userId);
   Future<List<CategoryModel>> getCategoriesByQuery(String query);
   Future<CategoryModel> getCategory(int id);
   Future<void> addCategory(Category category);
@@ -44,9 +45,9 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource{
   }
 
   @override
-  Future<List<CategoryModel>> getCategories() async{
+  Future<List<CategoryModel>> getCategories(SortingOption sort, int userId) async{
     try{
-      final categories = await localDb.getCategories();
+      final categories = await localDb.getCategories(sort, id: userId);
       return categories;
     }catch(_){
       throw CacheException();

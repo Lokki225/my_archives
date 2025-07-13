@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:my_archives/cubits/app_cubit.dart';
 import 'package:my_archives/features/folders/domain/usecases/AddNewFolder.dart';
+import 'package:my_archives/features/folders/domain/usecases/AddRelatedCategories.dart';
 import 'package:my_archives/features/folders/domain/usecases/DeleFolderById.dart';
 import 'package:my_archives/features/folders/domain/usecases/GetFolderById.dart';
 import 'package:my_archives/features/folders/domain/usecases/GetFolderRelatedCategories.dart';
@@ -12,6 +13,7 @@ import 'package:my_archives/features/home/domain/usecases/GetFoldersByQuery.dart
 import 'package:my_archives/features/home/domain/usecases/GetUserByFirstName.dart';
 import 'package:my_archives/injection_container.dart';
 
+import '../../../../core/constants/constants.dart';
 import '../../../folders/domain/usecases/EditFolder.dart';
 import '../../domain/entities/archive_entity.dart';
 import '../../domain/usecases/GetFolders.dart';
@@ -23,6 +25,7 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
   final GetFolders getFolders;
   final GetFoldersByQuery getFoldersByQuery;
   final AddNewFolder addNewFolder;
+  final AddFolderRelatedCategories addFolderRelatedCategories;
   final EditFolder editFolder;
   final DeleteFolderById deleteFolderById;
   final GetRelatedArchives getRelatedArchives;
@@ -34,13 +37,14 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
     required this.getFolders,
     required this.getFoldersByQuery,
     required this.addNewFolder,
+    required this.addFolderRelatedCategories,
     required this.editFolder,
     required this.deleteFolderById,
     required this.getRelatedArchives,
     required this.getUserByFirstName,
     required this.getFolderRelatedCategories,
 }) : super(FolderInitial()) {
-    on<FetchFoldersEvent>(_fetchFolderEvent);
+    on<FetchFoldersEvent>(_fetchFoldersEvent);
     on<FetchFoldersByQueryEvent>(_fetchFoldersByQueryEvent);
     on<ResetFolderToInitialStateEvent>(_resetFolderToInitialStateEvent);
     on<AddNewFolderEvent>(_addNewFolderEvent);
@@ -49,17 +53,36 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
     on<FetchFolderRelatedArchivesAndCategoriesEvent>(_getFolderRelatedArchivesAndCategoriesEventHandler);
   }
 
-  void _fetchFolderEvent(FolderEvent event, Emitter<FolderState> emit) async{
+  void _fetchFoldersEvent(FetchFoldersEvent event, Emitter<FolderState> emit) async {
     emit(FolderLoading());
-    final result = await getFolders.call();
 
-    try{
-      result.fold(
-        (failure) => emit(FolderError("Error Loading Folders")),
-        (folders) => emit(FolderLoaded(folders))
+    try {
+      final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+      if (currentLoggedUserFirstName == null) return;
+
+      final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+      await resultUser.fold(
+            (failure) async {
+          if (!emit.isDone) emit(FolderError("Error retrieving logged user info"));
+        },
+            (user) async {
+          final result = await getFolders.call(event.sortOption, user.id);
+
+          if (emit.isDone) return;
+
+          result.fold(
+                (failure) {
+              if (!emit.isDone) emit(FolderError("Error Loading Folders"));
+            },
+                (folders) {
+              if (!emit.isDone) emit(FolderLoaded(folders));
+            },
+          );
+        },
       );
-    }catch(e){
-      emit(FolderError("Error Emitting Loaded State"));
+    } catch (e) {
+      if (!emit.isDone) emit(FolderError("Error Emitting Loaded State"));
     }
   }
 
@@ -95,6 +118,7 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
           title: event.title,
           color: event.color,
           userId: user.id,
+          relatedCategories: event.categories,
           createdAt: DateTime.now().millisecondsSinceEpoch,
           updatedAt: DateTime.now().millisecondsSinceEpoch,
         );
@@ -105,6 +129,17 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
           resultFold.fold(
             (failure) => emit(FolderError("An error occurred while creating Folder: ${folder.toString()}")),
             (folderId) async{
+              // Add into Folder_Category table the folder's related categories
+              final resultCat = await addFolderRelatedCategories.call(folderId, event.categories);
+
+              resultCat.fold(
+                (failure) => emit(FolderError("An error occurred while creating Folder: ${folder.toString()}")),
+                (_) => null,
+              );
+
+              // Insert into TableChangeTracker
+              await sL<AppCubit>().insertTableChange("Folders", folderId, TableChangeStatus.created, user.id);
+
               print("Folder ID: [$folderId] created successfully!");
               emit(FolderCreated());
             }
@@ -124,9 +159,21 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
 
       updatedFolder.fold(
         (failure) => emit(FolderError("An error occurred while updating Folder: ${event.id}")),
-        (_) async{
-          print("Folder ID: [${event.id}] updated successfully!");
-          emit(FolderEdited());
+        (_) async {
+          // Get userId from Logged User
+          final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+          if(currentLoggedUserFirstName == null) return;
+          final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+          resultUser.fold(
+            (failure) => emit(FolderError("An error occurred while fetching User: ${event.id}")),
+            (user) async{
+              // Insert into TableChangeTracker
+              await sL<AppCubit>().insertTableChange("Folders", event.id, TableChangeStatus.modified, user.id);
+              print("Folder ID: [${event.id}] updated successfully!");
+              emit(FolderEdited());
+            }
+          );
         }
       );
     }catch(e){
@@ -142,6 +189,19 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
       result.fold(
         (failure) => emit(FolderError("An error occurred while deleting Folder: ${event.folderId}")),
         (folderId) async{
+          // Get userId from Logged User
+          final currentLoggedUserFirstName = await sL<AppCubit>().getUserFirstName();
+          if(currentLoggedUserFirstName == null) return;
+          final resultUser = await getUserByFirstName.call(currentLoggedUserFirstName);
+
+          resultUser.fold(
+            (failure) => emit(FolderError("An error occurred while fetching User: ${event.folderId}")),
+            (user) async{
+              // Insert into TableChangeTracker
+              await sL<AppCubit>().insertTableChange("Folders", event.folderId, TableChangeStatus.deleted, user.id);
+            }
+          );
+
           print("Folder ID: [${event.folderId}] deleted successfully!");
           emit(FolderDeleted());
         }
@@ -151,10 +211,7 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
     }
   }
 
-  void _getFolderRelatedArchivesAndCategoriesEventHandler(
-      FetchFolderRelatedArchivesAndCategoriesEvent event,
-      Emitter<FolderState> emit,
-      ) async {
+  void _getFolderRelatedArchivesAndCategoriesEventHandler(FetchFolderRelatedArchivesAndCategoriesEvent event, Emitter<FolderState> emit,) async {
     emit(FolderLoading());
 
     try {

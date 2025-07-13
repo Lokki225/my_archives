@@ -5,9 +5,14 @@ import 'package:my_archives/core/database/local.dart';
 import 'package:my_archives/features/authentification/data/datasources/user_local_datasource.dart';
 import 'package:my_archives/features/authentification/data/repositories/user_repository_impl.dart';
 import 'package:my_archives/features/authentification/domain/entities/user_entity.dart';
+import 'package:my_archives/features/change_tracker/InsertInTableChangeTracker.dart';
+import 'package:my_archives/features/home/domain/entities/category_entity.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/constants/constants.dart';
+import '../core/util/status_to_string.dart';
 import '../features/authentification/domain/repositories/user_repository.dart';
+import '../features/change_tracker/table_change_tracker_entity.dart';
 import '../injection_container.dart';
 
 part 'app_state.dart';
@@ -59,5 +64,23 @@ class AppCubit extends Cubit<AppState> {
 
     if(pinCode == null) return "Unexpected error while retrieving the user pin_code";
     return pinCode;
+  }
+
+  Future<void> insertTableChange(String tableName, int rowId, TableChangeStatus status, int userId) async{
+    final db = sL<LocalDatabase>();
+    final String statusString = statusToString(status);
+    await db.insertInTrackChange(tableName: tableName, rowId: rowId, status: statusString, userId: userId);
+  }
+
+  Future<List<TableChangeTracker>> getTablesChanges(int userId) async{
+    final db = sL<LocalDatabase>();
+    final tablesChanges = await db.getTablesChanges(userId);
+    return tablesChanges;
+  }
+
+  Future<List<Category>> getFolderCategories(int folderId) async{
+    final db = sL<LocalDatabase>();
+    final categories = await db.getFolderCategories(folderId);
+    return categories.map((category) => category.toEntity()).toList();
   }
 }

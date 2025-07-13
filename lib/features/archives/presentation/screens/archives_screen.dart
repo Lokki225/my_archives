@@ -98,26 +98,23 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Archive edited successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
                       );
-                      context.read<ArchiveBloc>().add(FetchArchivesEvent());
                     }
 
                     if (state is ArchiveDeleted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Archive deleted successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
                       );
-                      context.read<ArchiveBloc>().add(FetchArchivesEvent());
                     }
 
                     if (state is ArchiveCreated) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("Archive created successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
                       );
-                      context.read<ArchiveBloc>().add(FetchArchivesEvent());
                     }
 
-                    // if (state is ArchiveInitial || state is ArchiveEdited || state is ArchiveDeleted || state is ArchiveCreated) {
-                    //   context.read<ArchiveBloc>().add(FetchArchivesEvent());
-                    // }
+                    if (state is ArchiveInitial || state is ArchiveEdited || state is ArchiveDeleted || state is ArchiveCreated) {
+                      context.read<ArchiveBloc>().add(FetchArchivesEvent());
+                    }
                   },
                   child: BlocBuilder<ArchiveBloc, ArchiveState>(
                     builder: (BuildContext context, ArchiveState state) {
@@ -252,7 +249,7 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
                                               elevation: 5,
                                               color: Colors.deepPurple.shade200,
                                               child: ListTile(
-                                                leading: Image(image: AssetImage('$defaultImagePath/archive_cover.png'), height: 40, width: 40,),
+                                                leading: Image(image: AssetImage('$defaultImagePath/archive_cover.png'), height: 30, width: 30,),
                                                 title: Text(archive.title, style: TextStyle(fontSize: 27, color: Colors.white, fontWeight: FontWeight.bold),),
                                                 subtitle: Column(
                                                   children: [
@@ -318,7 +315,7 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
                                                                       formFieldsVal['folder_id'] ?? archive.folderId
                                                                     )
                                                                   );
-                                                                  // context.read<ArchiveBloc>().add(FetchArchivesEvent());
+                                                                  context.read<ArchiveBloc>().add(FetchArchivesEvent());
                                                                 },
                                                               );
                                                             },
@@ -330,7 +327,7 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
                                                               context.read<ArchiveBloc>().add(
                                                                   DeleteArchiveEvent(archive.id)
                                                               );
-                                                              // context.read<ArchiveBloc>().add(FetchArchivesEvent());
+                                                              context.read<ArchiveBloc>().add(FetchArchivesEvent());
                                                             },
                                                           ),
                                                         ],
@@ -402,11 +399,11 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
                             ),
                           ),
                         ):
-                        Center(child: Text("No archives found."));
-                      }
-
-                      if (state is ArchiveError) {
-                        return Text("Error: ${state.error}");
+                        Center(child: Text("No archives found.", style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w300,
+                        )));
                       }
                       return Text("Unexpected state. Please try again.",);
                     },
@@ -422,7 +419,6 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
             return FloatingActionButton(
               backgroundColor: Colors.tealAccent.shade700,
               onPressed: () {
-                context.read<FolderBloc>().add(FetchFoldersEvent());
                 showFormModal(
                   context: context,
                   availableFolders: state.folders,
@@ -439,6 +435,7 @@ class _ArchivesScreenState extends State<ArchivesScreen> {
                         formFieldsVal['folder_id']
                       )
                     );
+                    context.read<ArchiveBloc>().add(FetchArchivesEvent());
                   },
                 );
               },

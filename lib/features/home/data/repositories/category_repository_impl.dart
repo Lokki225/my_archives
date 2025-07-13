@@ -1,5 +1,6 @@
 
 import 'package:dartz/dartz.dart';
+import 'package:my_archives/core/constants/constants.dart';
 import 'package:my_archives/features/home/data/datasources/category_local_datasource.dart';
 import 'package:my_archives/features/home/domain/entities/category_entity.dart';
 import 'package:my_archives/features/home/domain/repositories/category_repository.dart';
@@ -34,9 +35,9 @@ class CategoryRepositoryImpl implements CategoryRepository{
   }
 
   @override
-  Future<Either<Failure, List<Category>>> getCategories() async{
+  Future<Either<Failure, List<Category>>> getCategories(SortingOption sort, int userId) async{
     try{
-      final categoryModels = await localDataSource.getCategories();
+      final categoryModels = await localDataSource.getCategories(sort, userId);
       final List<Category> categories = categoryModels.map((model) => model.toEntity()).toList();
       return Right(categories);
     }catch(e){

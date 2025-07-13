@@ -47,9 +47,9 @@ class ArchiveRepositoryImpl implements ArchiveRepository{
   }
 
   @override
-  Future<Either<Failure, List<Archive>>> getArchives(SortingOption sortOption) async{
+  Future<Either<Failure, List<Archive>>> getArchives(SortingOption sortOption, int userId) async{
     try {
-      final archives = await localDataSource.getArchives(sortOption);
+      final archives = await localDataSource.getArchives(sortOption, userId);
       return Right(archives.map((archive) => archive.toEntity()).toList());
     } catch (e) {
       return Left(CacheFailure()); // Handle any exceptions.

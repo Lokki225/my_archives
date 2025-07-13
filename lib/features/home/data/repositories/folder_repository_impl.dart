@@ -1,6 +1,7 @@
 
 import 'package:dartz/dartz.dart';
 import 'package:my_archives/features/home/data/models/folder_model.dart';
+import '../../../../core/constants/constants.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/archive_entity.dart';
 import '../../domain/entities/category_entity.dart';
@@ -15,7 +16,7 @@ class FolderRepositoryImpl implements FolderRepository{
 
   @override
   Future<Either<Failure, int>> addFolder(Folder folder) async{
-    final folderModel = FolderModel(id: folder.id, title: folder.title, color: folder.color, userId: folder.userId, createdAt: folder.createdAt, updatedAt: folder.updatedAt);
+    final folderModel = FolderModel(id: folder.id, title: folder.title, color: folder.color, userId: folder.userId, relatedCategories: folder.relatedCategories, createdAt: folder.createdAt, updatedAt: folder.updatedAt);
     try{
       final folderId = await localDataSource.addFolder(folderModel);
 
@@ -49,9 +50,9 @@ class FolderRepositoryImpl implements FolderRepository{
   }
 
   @override
-  Future<Either<Failure, List<Folder>>> getFolders() async{
+  Future<Either<Failure, List<Folder>>> getFolders(SortingOption sortOption, int userId) async{
     try {
-      final folders = await localDataSource.getFolders();
+      final folders = await localDataSource.getFolders(sortOption, userId);
       return Right(folders);
     } catch (e) {
       return Left(CacheFailure()); // Handle any exceptions.
@@ -93,6 +94,17 @@ class FolderRepositoryImpl implements FolderRepository{
     try{
       final categories = await localDataSource.getFolderRelatedCategories(folderId);
       return Right(categories.cast<Category>());
+    }catch(_){
+      return Left(CacheFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> addFolderRelatedCategories(int folderId, List<Category> categories) async{
+    try{
+      final categoryModels = categories.map((category) => category.toModel()).toList();
+      localDataSource.addFolderRelatedCategories(folderId, categoryModels);
+      return Right(null);
     }catch(_){
       return Left(CacheFailure());
     }

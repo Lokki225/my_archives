@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:multi_select_flutter/chip_display/multi_select_chip_display.dart';
+import 'package:multi_select_flutter/dialog/multi_select_dialog_field.dart';
+import 'package:multi_select_flutter/util/multi_select_item.dart';
 import 'package:my_archives/core/Common/widgets/Order_by_widget.dart';
 import 'package:my_archives/core/constants/constants.dart';
+import 'package:my_archives/features/home/presentation/bloc/category_bloc.dart';
 import 'package:my_archives/features/home/presentation/bloc/folder_bloc.dart';
 import 'package:my_archives/injection_container.dart';
 
@@ -11,8 +15,10 @@ import '../../../../core/Common/widgets/app_drawer_widget.dart';
 import '../../../../core/database/local.dart';
 import '../../../../core/database/seeds/local_database_seeder.dart';
 import '../../../../core/util/formatTimestampToDate.dart';
+import '../../../../cubits/app_cubit.dart';
 import '../../../../cubits/edit_mode_cubit.dart';
 import '../../../authentification/presentation/bloc/auth_bloc.dart';
+import '../../../home/domain/entities/category_entity.dart';
 
 class FoldersScreen extends StatefulWidget {
   const FoldersScreen({super.key});
@@ -29,6 +35,7 @@ class _FoldersScreenState extends State<FoldersScreen> {
   void initState() {
     super.initState();
     context.read<FolderBloc>().add(FetchFoldersEvent());
+    context.read<CategoryBloc>().add(FetchCategoriesEvent());
     context.read<EditModeCubit>().exitEditMode();
 
     final seeder = DatabaseSeeder(sL<LocalDatabase>());
@@ -40,6 +47,8 @@ class _FoldersScreenState extends State<FoldersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    List<Category> _selectedCategories = [];
+
     return Scaffold(
       appBar: AppBar(
         leading: Builder(
@@ -115,6 +124,8 @@ class _FoldersScreenState extends State<FoldersScreen> {
                       }
 
                       if (state is FolderLoaded) {
+
+
                         return state.folders.isNotEmpty ?
                           SingleChildScrollView(
                             child: Container(
@@ -148,7 +159,23 @@ class _FoldersScreenState extends State<FoldersScreen> {
                                             setState(() {
                                               _selectedFilter = selectedOption;
                                             });
-
+                                            switch (selectedOption) {
+                                              case 'All':
+                                                context.read<FolderBloc>().add(FetchFoldersEvent());
+                                                break;
+                                              case 'Last Added':
+                                                context.read<FolderBloc>().add(FetchFoldersEvent(sortOption: SortingOption.lastAddedFirst));
+                                                break;
+                                              case 'Last Updated':
+                                                context.read<FolderBloc>().add(FetchFoldersEvent(sortOption: SortingOption.lastUpdatedFirst));
+                                                break;
+                                              case 'Title Asc':
+                                                context.read<FolderBloc>().add(FetchFoldersEvent(sortOption: SortingOption.titleAZ));
+                                                break;
+                                              case 'Title Desc':
+                                                context.read<FolderBloc>().add(FetchFoldersEvent(sortOption: SortingOption.titleZA));
+                                                break;
+                                            }
                                           },
                                         ),
                                       ],
@@ -160,7 +187,7 @@ class _FoldersScreenState extends State<FoldersScreen> {
                                       Icon(Icons.sort, size: 25, color: Colors.white),
                                       SizedBox(width: 10),
                                       Text(
-                                        "Last Added",
+                                        _selectedFilter,
                                         style: TextStyle(
                                           fontSize: 22,
                                           fontWeight: FontWeight.bold,
@@ -223,27 +250,27 @@ class _FoldersScreenState extends State<FoldersScreen> {
                                             child: ListTile(
                                               leading: Image(image: AssetImage('$defaultImagePath/folder_cover.png'), height: 40, width: 40,),
                                               title: Row(
-                                                crossAxisAlignment: CrossAxisAlignment.center,
-                                                spacing: 5,
-                                                children: [
-                                                  Container(
-                                                    height: 20,
-                                                    width: 20,
-                                                    decoration: BoxDecoration(
-                                                      color: folder.getColorFromHexaString(folder.color),
-                                                      shape: BoxShape.circle,
-                                                      border: Border.all(color: Colors.white, width: 1),
-                                                    ),
-                                                    child: Text(
-                                                      "", style: TextStyle(
-                                                        fontSize: 20,
-                                                        color: Colors.white
-                                                    ),
-                                                    ),
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                Container(
+                                                  height: 20,
+                                                  width: 20,
+                                                  margin: EdgeInsets.only(right: 8), // Add spacing between color dot and text
+                                                  decoration: BoxDecoration(
+                                                    color: folder.getColorFromHexaString(folder.color),
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: Colors.white, width: 1),
                                                   ),
-                                                  Text(folder.title, style: TextStyle(fontSize: 25, color: Colors.white),),
-                                                ],
-                                              ),
+                                                ),
+                                                Expanded( // Prevents overflow
+                                                  child: Text(
+                                                    folder.title,
+                                                    style: TextStyle(fontSize: 25, color: Colors.white),
+                                                    overflow: TextOverflow.ellipsis, // Handles long folder names
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                               subtitle: Column(
                                                 children: [
                                                   Row(
@@ -287,29 +314,43 @@ class _FoldersScreenState extends State<FoldersScreen> {
                                               trailing:  Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  IconButton(
-                                                    icon: Icon(Icons.edit, color: Colors.teal, size: 30),
-                                                    onPressed: () {
-                                                      // Handle edit action
-                                                      showFormModal(
-                                                        initialTitle: folder.title,
-                                                        formFieldsVal: {
-                                                          'initialColor': Colors.teal
-                                                        },
-                                                        context: context,
-                                                        onSave: (formFieldsVal) {
-                                                          // Add folder to database or update state here
-                                                          context.read<FolderBloc>().add(EditFolderEvent(folder.id, formFieldsVal['title'], formFieldsVal['color'].toHexString()));
-                                                          context.read<FolderBloc>().add(FetchFoldersEvent());
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            SnackBar(content: Text("Folder edited successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
-                                                          );
-                                                        },
-                                                      );
-                                                    },
+                                                  BlocBuilder<CategoryBloc, CategoryState>(
+                                                    builder: (BuildContext context, CategoryState state) {
+                                                      if (state is CategoryLoading) {
+                                                        return CircularProgressIndicator();
+                                                      }
+                                                      if (state is CategoryLoaded) {
+                                                        return IconButton(
+                                                          icon: Icon(Icons.edit, color: Colors.teal, size: 25),
+                                                          onPressed: () {
+                                                            // Handle edit action
+                                                            // print("Folder Categories: ${folder.relatedCategories}");
+
+                                                            showFormModal(
+                                                              initialTitle: folder.title,
+                                                              formFieldsVal: {
+                                                                'initialColor': folder.color,
+                                                                'categories': state.categories,
+                                                                'relatedCategories': folder.relatedCategories,
+                                                              },
+                                                              context: context,
+                                                              onSave: (formFieldsVal) {
+                                                                // Add folder to database or update state here
+                                                                context.read<FolderBloc>().add(EditFolderEvent(folder.id, formFieldsVal['title'], formFieldsVal['color'], formFieldsVal['categories']));
+                                                                context.read<FolderBloc>().add(FetchFoldersEvent());
+                                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                                  SnackBar(content: Text("Folder edited successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                        );
+                                                      }
+                                                      return Container();
+                                                    }
                                                   ),
                                                   IconButton(
-                                                    icon: Icon(Icons.delete, color: Colors.red, size: 30),
+                                                    icon: Icon(Icons.delete, color: Colors.red, size: 25),
                                                     onPressed: () {
                                                       // Handle delete action
                                                       context.read<FolderBloc>().add(DeleteFolderEvent(folder.id));
@@ -406,7 +447,11 @@ class _FoldersScreenState extends State<FoldersScreen> {
                               ),
                             ),
                           ):
-                          Center(child: Text("No folders found."));
+                          Center(child: Text("No folders found.",style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w300,
+                          )));
                       }
 
                       if (state is FolderError) {
@@ -420,22 +465,34 @@ class _FoldersScreenState extends State<FoldersScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.tealAccent.shade700,
-        onPressed: () {
-          showFormModal(
-            context: context,
-            onSave: (formFieldsVal) {
-              // Add folder to database or update state here
-              context.read<FolderBloc>().add(AddNewFolderEvent(formFieldsVal['title'], formFieldsVal['color'].toHexString()));
-              context.read<FolderBloc>().add(FetchFoldersEvent());
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("Folder created successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
-              );
-            },
-          );
+      floatingActionButton: BlocBuilder<CategoryBloc, CategoryState>(
+        builder: (BuildContext context, CategoryState state) {
+         if (state is CategoryLoading) {
+            return CircularProgressIndicator();
+          }
+
+          if (state is CategoryLoaded) {
+            return FloatingActionButton(
+              backgroundColor: Colors.tealAccent.shade700,
+              onPressed: () {
+                showFormModal(
+                  context: context,
+                  formFieldsVal: {'categories': state.categories, 'color': Colors.teal.toHexString()},
+                  onSave: (formFieldsVal) {
+                    // Add folder to database or update state here
+                    context.read<FolderBloc>().add(AddNewFolderEvent(formFieldsVal['title'], formFieldsVal['color'], formFieldsVal['categories']));
+                    context.read<FolderBloc>().add(FetchFoldersEvent(sortOption: SortingOption.lastAddedFirst));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Folder created successfully!", style: TextStyle(color: Colors.white, fontSize: 20)), backgroundColor: Colors.teal),
+                    );
+                  },
+                );
+              },
+              child: Icon(Icons.add, color: Colors.deepPurple, size: 40,),
+            );
+          }
+          return Container();
         },
-        child: Icon(Icons.add, color: Colors.deepPurple, size: 40,),
       ),
     );
   }
@@ -456,6 +513,8 @@ void showFormModal({
       ? Color(int.parse(formFieldsVal!['color'], radix: 16))
       : Colors.teal; // Default color fallback
 
+  List<Category> _selectedCategories = formFieldsVal?['relatedCategories'] ?? [];
+
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -464,6 +523,8 @@ void showFormModal({
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (context) {
+      final List<Category> categories = formFieldsVal?['categories'] ?? [];
+
       return Padding(
         padding: EdgeInsets.only(
           left: 16,
@@ -497,6 +558,26 @@ void showFormModal({
                   }
                   return null;
                 },
+              ),
+              SizedBox(height: 16),
+              MultiSelectDialogField<Category>(
+                items: categories.map((c) => MultiSelectItem<Category>(c, c.title)).toList(),
+                title: Text("Categories"),
+                initialValue: categories.where((c) => _selectedCategories.contains(c)).toList(),
+                selectedColor: Colors.deepPurple.shade300,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: Colors.white),
+                ),
+                buttonIcon: Icon(Icons.category, color: Colors.white),
+                buttonText: Text("Select Categories", style: TextStyle(color: Colors.white)),
+                onConfirm: (results) {
+                  _selectedCategories = results;
+                },
+                chipDisplay: MultiSelectChipDisplay(
+                  chipColor: Colors.deepPurple.shade100,
+                  textStyle: TextStyle(color: Colors.deepPurple.shade900),
+                ),
               ),
               SizedBox(height: 16),
               Row(
@@ -542,6 +623,7 @@ void showFormModal({
                       {
                         'title': _titleController.text,
                         'color': _selectedColor.toHexString(), // Convert color to hex string
+                        'categories': _selectedCategories,
                       },
                     );
                     Navigator.pop(context);

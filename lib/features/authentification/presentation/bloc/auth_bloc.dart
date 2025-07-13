@@ -146,11 +146,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
 
   void _logout(LogoutClient event, Emitter<AuthState> emit) async {
-    await sL<AppCubit>().deleteUserData();
-    print('''
-      LocalStorage User firstName: ${await sL<FlutterSecureStorage>().read(key: 'firstName')}}\n
-      LocalStorage userIsConnect: ${await sL<FlutterSecureStorage>().read(key: 'userIsConnect')}
-    ''');
     emit(AuthLogout());
   }
 }

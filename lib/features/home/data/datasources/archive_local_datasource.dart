@@ -6,7 +6,7 @@ import '../../../../core/error/exceptions.dart';
 import '../models/archive_model.dart';
 
 abstract class ArchiveLocalDataSource{
-  Future<List<ArchiveModel>> getArchives(SortingOption sortOption);
+  Future<List<ArchiveModel>> getArchives(SortingOption sortOption, int userId);
 
   Future<List<ArchiveModel>> getArchivesByQuery(String query);
   
@@ -47,9 +47,9 @@ class ArchiveLocalDataSourceImpl implements ArchiveLocalDataSource{
   }
 
   @override
-  Future<List<ArchiveModel>> getArchives(SortingOption sortOption) async{
+  Future<List<ArchiveModel>> getArchives(SortingOption sortOption, int userId) async{
     try {
-      final archives = await localDb.getArchives(sortOption);
+      final archives = await localDb.getArchives(sortOption, id: userId);
       return archives;
     } catch (_) {
       throw CacheException();

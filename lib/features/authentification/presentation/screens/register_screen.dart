@@ -150,11 +150,7 @@ Widget _body() {
                             ),
                             TextButton(
                               onPressed: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => LoginScreen(),
-                                  ),
-                                );
+                                Navigator.pushReplacementNamed(context, '/LoginScreen');
                               },
                               child: const Text(
                                 "Login",

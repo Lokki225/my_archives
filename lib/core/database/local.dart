@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:my_archives/features/authentification/data/models/table_change_tracker_model.dart';
 import 'package:my_archives/features/authentification/data/models/user_model.dart';
 import 'package:my_archives/features/home/data/models/folder_model.dart';
 import 'package:path/path.dart';
@@ -25,6 +26,36 @@ class LocalDatabase
         return _database;
     }
 
+    // Insert in TablesChangesTracker
+    Future<void> insertInTrackChange({
+        required String tableName,
+        required int rowId,
+        required String status, // 'Created', 'Modified', 'Deleted'
+        required int userId,
+    }) async {
+        final db = await database;
+        await db!.insert('TablesChangesTracker', {
+            'table_name': tableName,
+            'row_id': rowId,
+            'status': status,
+            'user_id': userId,
+            'timestamp': DateTime.now().toIso8601String(),
+        });
+    }
+
+    // get all tables changes
+    Future<List<TableChangeTrackerModel>> getTablesChanges(int userId) async {
+        final db = await database;
+        final changes = await db!.query(
+            'TablesChangesTracker',
+            where: 'user_id = ?',
+            whereArgs: [userId],
+            orderBy: 'timestamp DESC LIMIT 5',
+        );
+
+        return changes.map((change) => TableChangeTrackerModel.fromJSON(change)).toList();
+    }
+
     Future<void> copyDatabaseFromAssets() async
     {
         final dbPath = await getDatabasesPath();
@@ -46,6 +77,21 @@ class LocalDatabase
         }
     }
 
+    // Empty all rows from local DB tables (but keep table structure)
+    Future<void> emptyTables() async {
+        final db = await database;
+
+        // Use a transaction for efficiency and safety
+        await db!.transaction((txn) async {
+            await txn.delete('User');
+            await txn.delete('Folder');
+            await txn.delete('Archive');
+            await txn.delete('Category');
+            await txn.delete('Folder_Category');
+            await txn.delete('PinCode');
+            // Add more tables here as needed
+        });
+    }
 
     String getOrderByClause(SortingOption option) 
     {
@@ -321,7 +367,7 @@ class LocalDatabase
         return null;
     }
 
-    Future<List<ArchiveModel>> getArchives(SortingOption sort) async
+    Future<List<ArchiveModel>> getArchives(SortingOption sort, { int id = 12}) async
     {
         try
         {
@@ -342,6 +388,8 @@ class LocalDatabase
                     'createdAt',
                     'updatedAt'
                 ],
+                where: 'userId = ?',
+                whereArgs: [id],
             );
 
             return maps.isNotEmpty ? maps.map((map) => ArchiveModel.fromJSON(map)).toList() : [];
@@ -504,12 +552,64 @@ class LocalDatabase
         return null;
     }
 
-    Future<List<FolderModel>> getFolders() async
+    Future<void> addFolderRelatedCategories(int folderId, List<CategoryModel> categories) async
     {
         final db = await database;
-        final List<Map<String, dynamic>> maps = await db!.query('Folder', columns: ['id', 'title', 'color', 'userId', 'createdAt', 'updatedAt'], orderBy: 'createdAt DESC');
-        return maps.isNotEmpty ? maps.map((map) => FolderModel.fromJSON(map)).toList() : [];
+
+        try
+        {
+            for (final category in categories)
+            {
+                await db!.insert(
+                    'Folder_Category',
+                    {
+                        'folderId': folderId,
+                        'categoryId': category.id,
+                    },
+                );
+            }
+            print('Folder categories added successfully: $folderId');
+        }
+        catch(e)
+        {
+            print('Failed to add folder categories: $e');
+        }
     }
+
+    Future<List<FolderModel>> getFolders(SortingOption sort, {int id = 12}) async {
+        final String orderBy = getOrderByClause(sort);
+        final db = await database;
+
+        final List<Map<String, dynamic>> maps = await db!.query(
+            'Folder',
+            columns: ['id', 'title', 'color', 'userId', 'createdAt', 'updatedAt'],
+            orderBy: orderBy,
+            where: 'userId = ?',
+            whereArgs: [id],
+        );
+
+        // Convert the maps to a new map with the related categories
+        List<Map<String, dynamic>> newMap = [];
+
+        for (final map in maps) {
+            final categories = await getFolderCategories(map['id']);
+            final nMap = {
+                'id': map['id'],
+                'title': map['title'],
+                'color': map['color'],
+                'userId': map['userId'],
+                'relatedCategories': categories,
+                'createdAt': map['createdAt'],
+                'updatedAt': map['updatedAt'],
+            };
+            newMap.add(nMap);
+        }
+
+        return maps.isNotEmpty
+            ? newMap.map((map) => FolderModel.fromJSON(map)).toList()
+            : [];
+    }
+
 
     Future<List<FolderModel>> getFoldersByQuery(String query) async
     {
@@ -565,7 +665,8 @@ class LocalDatabase
         return [];
     }
 
-    Future<List<CategoryModel>> getFolderCategories(int folderId) async {
+    Future<List<CategoryModel>> getFolderCategories(int folderId) async
+    {
         final db = await database;
 
         final maps = await db!.rawQuery(
@@ -717,10 +818,11 @@ class LocalDatabase
         return null;
     }
 
-    Future<List<CategoryModel>> getCategories() async
+    Future<List<CategoryModel>> getCategories(SortingOption sort, {int id = 12}) async
     {
+        final String orderBy = getOrderByClause(sort);
         final db = await database;
-        final List<Map<String, dynamic>> maps = await db!.query('Category', orderBy: 'createdAt DESC');
+        final List<Map<String, dynamic>> maps = await db!.query('Category', orderBy: orderBy, where: 'userId = ?', whereArgs: [id]);
 
         return maps.isNotEmpty ? maps.map((map) => CategoryModel.fromJSON(map)).toList() : [];
     }

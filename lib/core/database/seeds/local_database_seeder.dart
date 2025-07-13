@@ -1,5 +1,4 @@
 import 'package:my_archives/core/database/local.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:faker/faker.dart';
 
 class DatabaseSeeder {
@@ -61,7 +60,6 @@ class DatabaseSeeder {
       );
     }
 
-    print('15 archives seeded successfully!');
   }
 
   Future<void> seedFolders() async {
@@ -106,7 +104,6 @@ class DatabaseSeeder {
       );
     }
 
-    print('5 folders seeded successfully!');
   }
 
   Future<void> seedCategories() async {
@@ -136,7 +133,7 @@ class DatabaseSeeder {
     });
 
     for (var category in categories) {
-      await db!.rawInsert(
+      await db.rawInsert(
         '''
       INSERT INTO Category(title, userId, icon, createdAt, updatedAt)
       VALUES(?, ?, ?, ?, ?)
@@ -151,11 +148,10 @@ class DatabaseSeeder {
       );
     }
 
-    print('5 categories seeded successfully!');
   }
 
   Future<void> seedPinCode(int userId) async {
-    final db = await localDatabase.database;
+    // final db = await localDatabase.database;
 
     // await db!.execute('''
     //   CREATE TABLE PinCode (
@@ -169,9 +165,9 @@ class DatabaseSeeder {
 
     try{
       await localDatabase.setUserPinCode(3, pinCode);
-      print('Pin code seeded successfully!');
+      // print('Pin code seeded successfully!');
     }catch(e){
-      print('Error seeding pin code: $e');
+      // print('Error seeding pin code: $e');
     }
   }
 
@@ -207,7 +203,50 @@ class DatabaseSeeder {
         ],
       );
     }
+  }
 
-    print('5 folderCategories seeded successfully!');
+  // Seed TablesChangesTracker
+  Future<void> seedTablesChangesTracker() async {
+    final db = await localDatabase.database;
+
+    final List<String> tables = ['Folder', 'Archive', 'Category'];
+    final List<String> statuses = ['Created', 'Modified', 'Deleted'];
+
+    // await db!.execute('''
+    //   CREATE TABLE TablesChangesTracker (
+    //     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //     table_name TEXT NOT NULL,
+    //     row_id INTEGER NOT NULL,
+    //     status TEXT CHECK(status IN ('Created', 'Modified', 'Deleted')) NOT NULL,
+    //     user_id INTEGER NOT NULL,
+    //     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    //   );
+    // ''');
+
+    final List<Map<String, dynamic>> tablesChanges = List.generate(5, (index) {
+      return {
+        'table_name': tables[faker.randomGenerator.integer(tables.length)],
+        'row_id': faker.randomGenerator.integer(10),
+        'status': statuses[faker.randomGenerator.integer(statuses.length)],
+        'user_id': 3,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    });
+
+    for (var tableChange in tablesChanges) {
+      await db!.rawInsert(
+        '''
+      INSERT INTO TablesChangesTracker(table_name, row_id, status, user_id, timestamp)
+      VALUES(?, ?, ?, ?, ?)
+      ''',
+        [
+          tableChange['table_name'],
+          tableChange['row_id'],
+          tableChange['status'],
+          tableChange['user_id'],
+          tableChange['timestamp'],
+        ],
+      );
+    }
   }
 }

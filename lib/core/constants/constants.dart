@@ -66,6 +66,15 @@ CREATE TABLE PinCode (
     pin_code TEXT NOT NULL,
     FOREIGN KEY (userId) REFERENCES User (id) ON DELETE CASCADE
 );
+
+CREATE TABLE TablesChangesTracker (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_name TEXT NOT NULL,
+  row_id INTEGER NOT NULL,
+  status TEXT CHECK(status IN ('Created', 'Modified', 'Deleted')) NOT NULL,
+  user_id INTEGER NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 ''';
 
 List<String> folderFilters = [
@@ -86,6 +95,12 @@ enum SortingOption {
   lastUpdatedFirst,
   titleAZ,
   titleZA,
+}
+
+enum TableChangeStatus {
+  created,
+  modified,
+  deleted,
 }
 
 

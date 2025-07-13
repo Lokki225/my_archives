@@ -3,7 +3,11 @@ part of 'category_bloc.dart';
 @immutable
 sealed class CategoryEvent {}
 
-class FetchCategoriesEvent extends CategoryEvent {}
+class FetchCategoriesEvent extends CategoryEvent {
+  final SortingOption sortOption;
+
+  FetchCategoriesEvent({this.sortOption = SortingOption.all});
+}
 
 class FetchCategoriesByQueryEvent extends CategoryEvent {
   final String query;
