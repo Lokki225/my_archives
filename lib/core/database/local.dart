@@ -56,6 +56,8 @@ class LocalDatabase
         return changes.map((change) => TableChangeTrackerModel.fromJSON(change)).toList();
     }
 
+
+
     Future<void> copyDatabaseFromAssets() async
     {
         final dbPath = await getDatabasesPath();
@@ -75,6 +77,19 @@ class LocalDatabase
         } else {
             print("Database already exists!");
         }
+    }
+
+    Future<void> deleteMyDatabase() async {
+        final databasesPath = await getDatabasesPath();
+        final path = join(databasesPath, 'local.db'); // Replace with your DB name
+
+        await deleteDatabase(path);
+        print("🗑️ Database deleted at path: $path");
+    }
+
+    void printDbPath() async {
+        final databasesPath = await getDatabasesPath();
+        print("📂 DB Path: $databasesPath");
     }
 
     // Empty all rows from local DB tables (but keep table structure)
@@ -121,6 +136,7 @@ class LocalDatabase
     {
         await db.execute(DB_TABLES);
     }
+
 
     // User CRUD Operations on User Table
     Future<int?> insertUser(UserModel user) async
